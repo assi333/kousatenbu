@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>交差点部 - 交流会参加者つながりツール</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Simple storage
+        const storage = {
+            get(key) {
+                try {
+                    const item = localStorage.getItem(`kosasenbu_${key}`);
+                    return item ? JSON.parse(item) : null;
+                } catch {
+                    return null;
+                }
+            },
+            set(key, value) {
+                try {
+                    localStorage.setItem(`kosasenbu_${key}`, JSON.stringify(value));
+                    return true;
+                } catch {
+                    return false;
+                }
+            },
+            remove(key) {
+                try {
+                    localStorage.removeItem(`kosasenbu_${key}`);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+        };
+
+        function App() {
+            const [currentUser, setCurrentUser] = useState(null);
+            const [users, setUsers] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                loadData();
+            }, []);
+
+            const loadData = () => {
+                try {
+                    let savedUsers = storage.get('users') || [];
+                    
+                    if (savedUsers.length === 0) {
+                        const adminUser = {
+                            id: 'admin-1',
+                            email: 'assi14iii@gmail.com',
+                            password: 'kouassi93',
+                            isAdmin: true,
+                            qrCode: 'KOSASENBU-ADMIN-001',
+                            profile: {
+                                nickname: '',
+                                fullName: '',
+                                photo: null,
+                                email: '',
+                                phoneNumber: '',
+                                lineAccount: '',
+                                instagram: '',
+                                threads: '',
+                                facebook: '',
+                                twitter: '',
+                                linkedin: '',
+                                company: '',
+                                businessCardFront: null,
+                                businessCardBack: null,
+                                introduction: '',
+                                privacySetting: 'public'
+                            }
+                        };
+                        savedUsers = [adminUser];
+                        storage.set('users', savedUsers);
+                    }
+                    
+                    setUsers(savedUsers);
+                    
+                    const savedUser = storage.get('currentUser');
+                    if (!savedUser) {
+                        const admin = savedUsers.find(u => u.email === 'assi14iii@gmail.com');
+                        if (admin) {
+                            storage.set('currentUser', admin);
+                            setCurrentUser(admin);
+                        }
+                    } else {
+                        setCurrentUser(savedUser);
+                    }
+
+                    // Add test event if none exists or if test event doesn't have attendances
+                    let savedEvents = storage.get('events') || [];
+                    const testEventExists = savedEvents.find(e => e.id === 'event-test-1' && e.attendances && e.attendances.includes('admin-1'));
+                    
+                    if (!testEventExists) {
+                        // Remove old test event if it exists without attendances
+                        savedEvents = savedEvents.filter(e => e.id !== 'event-test-1');
+                        
+                        const testEvent = {
+                            id: 'event-test-1',
+                            title: 'なんつな＠カリココ',
+                            date: '2026-01-15T19:00',
+                            endDate: '2026-01-15T22:00',
+                            address: '愛知県豊川市',
+                            venueName: 'カリココ',
+                            fee: '500円',
+                            registrations: [],
+                            attendances: ['admin-1'] // Admin attended
+                        };
+                        savedEvents.push(testEvent);
+                        storage.set('events', savedEvents);
+                    }
+                } catch (e) {
+                    console.error('Load error:', e);
+                }
+                setLoading(false);
+            };
+
+            const login = (email, password) => {
+                const user = users.find(u => u.email === email && u.password === password);
+                if (!user) {
+                    alert('メールアドレスまたはパスワードが正しくありません');
+                    return false;
+                }
+                storage.set('currentUser', user);
+                setCurrentUser(user);
+                return true;
+            };
+
+            const register = (email, password) => {
+                if (users.find(u => u.email === email)) {
+                    alert('このメールアドレスは既に登録されています');
+                    return false;
+                }
+
+                const newUser = {
+                    id: Date.now().toString(),
+                    email,
+                    password,
+                    isAdmin: email === 'assi14iii@gmail.com',
+                    qrCode: `KOSASENBU-${Date.now()}`,
+                    profile: {
+                        nickname: '',
+                        fullName: '',
+                        photo: null,
+                        email: '',
+                        phoneNumber: '',
+                        lineAccount: '',
+                        instagram: '',
+                        threads: '',
+                        facebook: '',
+                        twitter: '',
+                        linkedin: '',
+                        company: '',
+                        businessCardFront: null,
+                        businessCardBack: null,
+                        introduction: '',
+                        privacySetting: 'public'
+                    }
+                };
+
+                const updatedUsers = [...users, newUser];
+                storage.set('users', updatedUsers);
+                setUsers(updatedUsers);
+                return true;
+            };
+
+            const logout = () => {
+                storage.remove('currentUser');
+                setCurrentUser(null);
+            };
+
+            const updateProfile = (updatedProfile) => {
+                const updatedUsers = users.map(u => 
+                    u.id === currentUser.id ? { ...u, profile: updatedProfile } : u
+                );
+                storage.set('users', updatedUsers);
+                setUsers(updatedUsers);
+                
+                const updatedUser = { ...currentUser, profile: updatedProfile };
+                storage.set('currentUser', updatedUser);
+                setCurrentUser(updatedUser);
+            };
+
+            if (loading) {
+                return <div className="flex items-center justify-center min-h-screen">
+                    <div className="text-xl">読み込み中...</div>
+                </div>;
+            }
+
+            if (!currentUser) {
+                return <AuthScreen onLogin={login} onRegister={register} />;
+            }
+
+            return <UserDashboard 
+                currentUser={currentUser}
+                users={users}
+                onLogout={logout}
+                onUpdateProfile={updateProfile}
+            />;
+        }
+
+        function AuthScreen({ onLogin, onRegister }) {
+            const [view, setView] = useState('login');
+            const [email, setEmail] = useState('');
+            const [emailConfirm, setEmailConfirm] = useState('');
+            const [password, setPassword] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (view === 'login') {
+                    onLogin(email, password);
+                } else {
+                    if (email !== emailConfirm) {
+                        alert('メールアドレスが一致しません');
+                        return;
+                    }
+                    if (onRegister(email, password)) {
+                        alert('登録完了しました');
+                        setView('login');
+                        setEmail('');
+                        setEmailConfirm('');
+                        setPassword('');
+                    }
+                }
+            };
+
+            return (
+                <div className="gradient-bg min-h-screen flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
+                        <h1 className="text-3xl font-bold text-center mb-2">交差点部</h1>
+                        <p className="text-center text-gray-600 mb-6">〜人と活動がつながる場所〜</p>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">メールアドレス</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full px-4 py-2 border rounded-lg"
+                                    required
+                                />
+                            </div>
+
+                            {view === 'register' && (
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">メールアドレス（確認用）</label>
+                                    <input
+                                        type="email"
+                                        value={emailConfirm}
+                                        onChange={(e) => setEmailConfirm(e.target.value)}
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                        required
+                                    />
+                                    {emailConfirm && email !== emailConfirm && (
+                                        <p className="text-red-600 text-sm mt-1">メールアドレスが一致しません</p>
+                                    )}
+                                </div>
+                            )}
+                            
+                            <div>
+                                <label className="block text-sm font-medium mb-1">パスワード</label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-2 border rounded-lg"
+                                    required
+                                />
+                            </div>
+                            
+                            <button
+                                type="submit"
+                                className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700"
+                            >
+                                {view === 'login' ? 'ログイン' : '新規登録'}
+                            </button>
+                        </form>
+                        
+                        <div className="mt-4 text-center">
+                            <button
+                                onClick={() => setView(view === 'login' ? 'register' : 'login')}
+                                className="text-purple-600 text-sm"
+                            >
+                                {view === 'login' ? 'アカウント新規登録' : 'ログインに戻る'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function UserDashboard({ currentUser, users, onLogout, onUpdateProfile }) {
+            const [view, setView] = useState('home');
+            const [myPageView, setMyPageView] = useState('overview');
+            const [showQR, setShowQR] = useState(false);
+            const [showAdmin, setShowAdmin] = useState(false);
+            const [profileData, setProfileData] = useState(currentUser.profile);
+            const [isEditingProfile, setIsEditingProfile] = useState(false);
+            const [viewingAttendees, setViewingAttendees] = useState(null);
+            const [selectedAttendees, setSelectedAttendees] = useState([]);
+            const [selectedProfile, setSelectedProfile] = useState(null);
+            const [expandedEventId, setExpandedEventId] = useState(null);
+            const [events, setEvents] = useState([]);
+            const [selectedEvent, setSelectedEvent] = useState(null);
+            const [showRegistrationConfirm, setShowRegistrationConfirm] = useState(false);
+            const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+            const [eventToCancel, setEventToCancel] = useState(null);
+
+            const loadEvents = () => {
+                const savedEvents = storage.get('events') || [];
+                setEvents(savedEvents);
+            };
+
+            useEffect(() => {
+                loadEvents();
+                const interval = setInterval(() => {
+                    if (view === 'home') {
+                        loadEvents();
+                    }
+                }, 2000);
+                return () => clearInterval(interval);
+            }, [view]);
+
+            const upcomingEvents = events
+                .filter(event => new Date(event.date) >= new Date())
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const myRegisteredEvents = events.filter(event => 
+                event.registrations && event.registrations.includes(currentUser.id)
+            );
+
+            const myAttendedEvents = events.filter(event =>
+                event.attendances && event.attendances.includes(currentUser.id)
+            );
+
+            const myOngoingEvents = events.filter(event => {
+                const eventDate = new Date(event.date);
+                const eventEndDate = event.endDate ? new Date(event.endDate) : null;
+                const now = new Date();
+                
+                if (eventEndDate) {
+                    return eventDate <= now && now <= eventEndDate && event.attendances && event.attendances.includes(currentUser.id);
+                } else {
+                    const eventEnd = new Date(eventDate.getTime() + 6 * 60 * 60 * 1000); // Default 6 hours
+                    return eventDate <= now && now <= eventEnd && event.attendances && event.attendances.includes(currentUser.id);
+                }
+            });
+
+            const getName = (user) => {
+                return user.profile.fullName || user.profile.nickname || user.email;
+            };
+
+            const formatDateTime = (dateString) => {
+                const date = new Date(dateString);
+                return date.toLocaleString('ja-JP', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            const handleImageUpload = (e, field) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        setProfileData({ ...profileData, [field]: event.target.result });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const saveProfile = (e) => {
+                e.preventDefault();
+                
+                // Validate: either nickname or fullName must be filled
+                if (!profileData.nickname && !profileData.fullName) {
+                    alert('ニックネームまたは氏名のどちらか一方は入力必須です');
+                    return;
+                }
+                
+                onUpdateProfile(profileData);
+                alert('プロフィールを保存しました');
+            };
+
+            const registerForEvent = () => {
+                if (!selectedEvent) return;
+
+                const updatedEvents = events.map(event => {
+                    if (event.id === selectedEvent.id) {
+                        const registrations = event.registrations || [];
+                        if (!registrations.includes(currentUser.id)) {
+                            return { ...event, registrations: [...registrations, currentUser.id] };
+                        }
+                    }
+                    return event;
+                });
+
+                storage.set('events', updatedEvents);
+                setEvents(updatedEvents);
+                setShowRegistrationConfirm(false);
+                setSelectedEvent(null);
+                alert('参加予定に登録しました');
+            };
+
+            const cancelEventRegistration = () => {
+                if (!eventToCancel) return;
+
+                const updatedEvents = events.map(event => {
+                    if (event.id === eventToCancel.id) {
+                        const registrations = event.registrations || [];
+                        return { 
+                            ...event, 
+                            registrations: registrations.filter(id => id !== currentUser.id) 
+                        };
+                    }
+                    return event;
+                });
+
+                storage.set('events', updatedEvents);
+                setEvents(updatedEvents);
+                setShowCancelConfirm(false);
+                setEventToCancel(null);
+                alert('参加をキャンセルしました');
+            };
+
+            const isRegistered = (eventId) => {
+                const event = events.find(e => e.id === eventId);
+                return event && event.registrations && event.registrations.includes(currentUser.id);
+            };
+
+            if (showAdmin && currentUser.isAdmin) {
+                return <AdminPanel users={users} onBack={() => {
+                    setShowAdmin(false);
+                    loadEvents();
+                }} onLogout={onLogout} />;
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="gradient-bg text-white p-4">
+                        <div className="flex justify-between items-center">
+                            <h1 className="text-xl font-bold">交差点部</h1>
+                            <button onClick={onLogout} className="bg-white text-purple-600 px-3 py-2 rounded-lg text-sm">
+                                ログアウト
+                            </button>
+                        </div>
+                    </header>
+
+                    <nav className="bg-white shadow-sm">
+                        <div className="flex items-center justify-between px-4 py-3">
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={() => setView('home')}
+                                    className={`px-3 py-2 rounded-lg text-sm ${view === 'home' ? 'bg-purple-100 text-purple-700' : 'text-gray-600'}`}
+                                >
+                                    🏠 ホーム
+                                </button>
+                                <button
+                                    onClick={() => setView('mypage')}
+                                    className={`px-3 py-2 rounded-lg text-sm ${view === 'mypage' ? 'bg-purple-100 text-purple-700' : 'text-gray-600'}`}
+                                >
+                                    👤 マイページ
+                                </button>
+                                <button
+                                    onClick={() => setView('settings')}
+                                    className={`px-3 py-2 rounded-lg text-sm ${view === 'settings' ? 'bg-purple-100 text-purple-700' : 'text-gray-600'}`}
+                                >
+                                    ⚙️ 設定
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => setShowQR(true)}
+                                className="bg-purple-600 text-white px-3 py-2 rounded-lg text-sm"
+                            >
+                                📱 まいQR
+                            </button>
+                        </div>
+                    </nav>
+
+                    {showQR && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
+                            <div className="bg-white rounded-lg p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex justify-between mb-4">
+                                    <h2 className="text-xl font-bold">マイQRコード</h2>
+                                    <button onClick={() => setShowQR(false)} className="text-2xl">×</button>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUser.qrCode)}`} alt="QR" className="mb-4" />
+                                    <p className="text-sm text-gray-600 mb-2">交流会ID</p>
+                                    <p className="font-mono text-xs bg-gray-100 px-3 py-2 rounded break-all">{currentUser.qrCode}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showRegistrationConfirm && selectedEvent && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowRegistrationConfirm(false)}>
+                            <div className="bg-white rounded-lg p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+                                <h2 className="text-xl font-bold mb-4">{selectedEvent.title}</h2>
+                                <p className="text-gray-700 mb-6">円滑な運営のためご協力ください。公開はしません。</p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={registerForEvent}
+                                        className="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
+                                    >
+                                        参加を予定する
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowRegistrationConfirm(false);
+                                            setSelectedEvent(null);
+                                        }}
+                                        className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500"
+                                    >
+                                        キャンセル
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showCancelConfirm && eventToCancel && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowCancelConfirm(false)}>
+                            <div className="bg-white rounded-lg p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+                                <h2 className="text-xl font-bold mb-4">参加キャンセル</h2>
+                                <p className="text-gray-700 mb-6">キャンセル料はいただきません</p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={cancelEventRegistration}
+                                        className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
+                                    >
+                                        参加をキャンセルする
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowCancelConfirm(false);
+                                            setEventToCancel(null);
+                                        }}
+                                        className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500"
+                                    >
+                                        戻る
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {viewingAttendees && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={() => setViewingAttendees(null)}>
+                            <div className="bg-white rounded-lg p-6 max-w-2xl w-full my-8" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex justify-between mb-4">
+                                    <h2 className="text-xl font-bold">{viewingAttendees.title} - 出席者一覧</h2>
+                                    <button onClick={() => setViewingAttendees(null)} className="text-2xl">×</button>
+                                </div>
+                                
+                                <div className="mb-4 flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const publicAttendees = users.filter(u => 
+                                                viewingAttendees.attendances.includes(u.id) && 
+                                                u.profile.privacySetting === 'public' &&
+                                                u.id !== currentUser.id
+                                            );
+                                            if (selectedAttendees.length === publicAttendees.length) {
+                                                setSelectedAttendees([]);
+                                            } else {
+                                                setSelectedAttendees(publicAttendees.map(u => u.id));
+                                            }
+                                        }}
+                                        className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm"
+                                    >
+                                        全員選択
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const currentUserData = storage.get('currentUser');
+                                            const existingContacts = currentUserData.contacts || [];
+                                            const existingIds = existingContacts.map(c => c.userId);
+                                            const newContacts = selectedAttendees
+                                                .filter(id => !existingIds.includes(id))
+                                                .map(userId => ({
+                                                    userId,
+                                                    eventId: viewingAttendees.id,
+                                                    date: viewingAttendees.date
+                                                }));
+                                            if (newContacts.length === 0) {
+                                                alert('新しく保存する参加者がいません');
+                                                return;
+                                            }
+                                            const updatedUser = {
+                                                ...currentUserData,
+                                                contacts: [...existingContacts, ...newContacts]
+                                            };
+                                            storage.set('currentUser', updatedUser);
+                                            const allUsers = storage.get('users') || [];
+                                            const updatedUsers = allUsers.map(u => u.id === currentUser.id ? updatedUser : u);
+                                            storage.set('users', updatedUsers);
+                                            alert(`${newContacts.length}名を名簿に保存しました`);
+                                            setSelectedAttendees([]);
+                                            setViewingAttendees(null);
+                                            window.location.reload();
+                                        }}
+                                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm"
+                                    >
+                                        名簿に保存 ({selectedAttendees.length})
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                                    {users.filter(u => viewingAttendees.attendances.includes(u.id)).map(attendee => {
+                                        const isPublic = attendee.profile.privacySetting === 'public';
+                                        const isOwn = attendee.id === currentUser.id;
+                                        return (
+                                            <div key={attendee.id} className={`border rounded-lg p-3 ${!isPublic ? 'bg-gray-100' : ''}`}>
+                                                <div className="flex items-start gap-3">
+                                                    {!isOwn && isPublic && (
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedAttendees.includes(attendee.id)}
+                                                            onChange={() => {
+                                                                if (selectedAttendees.includes(attendee.id)) {
+                                                                    setSelectedAttendees(selectedAttendees.filter(id => id !== attendee.id));
+                                                                } else {
+                                                                    setSelectedAttendees([...selectedAttendees, attendee.id]);
+                                                                }
+                                                            }}
+                                                            className="mt-1"
+                                                        />
+                                                    )}
+                                                    <div className="flex-1 cursor-pointer" onClick={() => isPublic && setSelectedProfile(attendee)}>
+                                                        {attendee.profile.photo && (
+                                                            <img src={attendee.profile.photo} alt="" className="w-12 h-12 rounded-full object-cover mb-2" />
+                                                        )}
+                                                        <p className="font-bold text-sm">
+                                                            {attendee.profile.fullName || attendee.profile.nickname || attendee.email}
+                                                        </p>
+                                                        {attendee.profile.fullName && attendee.profile.nickname && (
+                                                            <p className="text-xs text-gray-600">（{attendee.profile.nickname}）</p>
+                                                        )}
+                                                        {isOwn && <span className="text-xs text-gray-500">(あなた)</span>}
+                                                        {!isPublic && !isOwn && <p className="text-xs text-gray-500 mt-1">🔒 非公開</p>}
+                                                        {isPublic && !isOwn && <p className="text-xs text-purple-600 mt-1">タップで詳細</p>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedProfile && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={() => setSelectedProfile(null)}>
+                            <div className="bg-white rounded-lg p-6 max-w-md w-full my-8" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex justify-between mb-4">
+                                    <h2 className="text-xl font-bold">プロフィール</h2>
+                                    <button onClick={() => setSelectedProfile(null)} className="text-2xl">×</button>
+                                </div>
+                                <div className="space-y-3">
+                                    {selectedProfile.profile.photo && (
+                                        <img src={selectedProfile.profile.photo} alt="" className="w-24 h-24 rounded-full object-cover mx-auto" />
+                                    )}
+                                    {(selectedProfile.profile.fullName || selectedProfile.profile.nickname) && (
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-600">名前</label>
+                                            <p className="font-bold">{selectedProfile.profile.fullName || selectedProfile.profile.nickname}</p>
+                                            {selectedProfile.profile.fullName && selectedProfile.profile.nickname && (
+                                                <p className="text-sm text-gray-600">（{selectedProfile.profile.nickname}）</p>
+                                            )}
+                                        </div>
+                                    )}
+                                    {selectedProfile.profile.company && (
+                                        <div><label className="text-sm font-medium text-gray-600">会社・団体</label><p>{selectedProfile.profile.company}</p></div>
+                                    )}
+                                    {selectedProfile.profile.email && (
+                                        <div><label className="text-sm font-medium text-gray-600">メール</label><p>{selectedProfile.profile.email}</p></div>
+                                    )}
+                                    {selectedProfile.profile.phoneNumber && (
+                                        <div><label className="text-sm font-medium text-gray-600">電話</label><p>{selectedProfile.profile.phoneNumber}</p></div>
+                                    )}
+                                    {(selectedProfile.profile.lineAccount || selectedProfile.profile.instagram || selectedProfile.profile.threads || selectedProfile.profile.facebook || selectedProfile.profile.twitter || selectedProfile.profile.linkedin) && (
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-600">SNS</label>
+                                            <div className="text-sm space-y-1">
+                                                {selectedProfile.profile.lineAccount && <p>LINE: {selectedProfile.profile.lineAccount}</p>}
+                                                {selectedProfile.profile.instagram && <p>Instagram: {selectedProfile.profile.instagram}</p>}
+                                                {selectedProfile.profile.threads && <p>Threads: {selectedProfile.profile.threads}</p>}
+                                                {selectedProfile.profile.facebook && <p>Facebook: {selectedProfile.profile.facebook}</p>}
+                                                {selectedProfile.profile.twitter && <p>X: {selectedProfile.profile.twitter}</p>}
+                                                {selectedProfile.profile.linkedin && <p>LinkedIn: {selectedProfile.profile.linkedin}</p>}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {(selectedProfile.profile.businessCardFront || selectedProfile.profile.businessCardBack) && (
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-600">名刺</label>
+                                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                                {selectedProfile.profile.businessCardFront && <img src={selectedProfile.profile.businessCardFront} alt="名刺表" className="w-full rounded" />}
+                                                {selectedProfile.profile.businessCardBack && <img src={selectedProfile.profile.businessCardBack} alt="名刺裏" className="w-full rounded" />}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {selectedProfile.profile.introduction && (
+                                        <div><label className="text-sm font-medium text-gray-600">自己紹介</label><p className="whitespace-pre-wrap">{selectedProfile.profile.introduction}</p></div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <main className="p-4">
+                        {view === 'home' && (
+                            <div>
+                                <h2 className="text-xl font-bold mb-4">開催予定のイベント</h2>
+                                {upcomingEvents.length === 0 ? (
+                                    <div className="bg-white rounded-lg shadow p-6">
+                                        <p className="text-gray-600 text-center">現在、開催予定のイベントはありません</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {upcomingEvents.map(event => (
+                                            <div
+                                                key={event.id}
+                                                className="bg-white rounded-lg shadow p-4"
+                                            >
+                                                <h3 className="font-bold text-lg mb-2">{event.title}</h3>
+                                                <div className="text-sm text-gray-600 space-y-1 mb-3">
+                                                    <p>📅 {formatDateTime(event.date)}</p>
+                                                    {event.venueName && <p>🏢 {event.venueName}</p>}
+                                                    {event.address && <p>📍 {event.address}</p>}
+                                                    {event.fee && <p>💰 {event.fee}</p>}
+                                                </div>
+                                                {isRegistered(event.id) ? (
+                                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                                                        <p className="text-blue-800 font-medium text-sm">参加予定です</p>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedEvent(event);
+                                                            setShowRegistrationConfirm(true);
+                                                        }}
+                                                        className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
+                                                    >
+                                                        参加を予定する
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {view === 'mypage' && (
+                            <div>
+                                <div className="bg-white rounded-lg mb-4 overflow-x-auto">
+                                    <div className="flex p-2 space-x-2 min-w-max">
+                                        <button onClick={() => setMyPageView('overview')} className={`px-4 py-2 rounded-lg text-sm ${myPageView === 'overview' ? 'bg-purple-600 text-white' : 'bg-gray-100'}`}>概要</button>
+                                        <button onClick={() => setMyPageView('profile')} className={`px-4 py-2 rounded-lg text-sm ${myPageView === 'profile' ? 'bg-purple-600 text-white' : 'bg-gray-100'}`}>プロフィール編集</button>
+                                        <button onClick={() => setMyPageView('contacts')} className={`px-4 py-2 rounded-lg text-sm ${myPageView === 'contacts' ? 'bg-purple-600 text-white' : 'bg-gray-100'}`}>名簿</button>
+                                        <button onClick={() => setMyPageView('qr')} className={`px-4 py-2 rounded-lg text-sm ${myPageView === 'qr' ? 'bg-purple-600 text-white' : 'bg-gray-100'}`}>QRコード</button>
+                                    </div>
+                                </div>
+
+                                {myPageView === 'overview' && (
+                                    <div className="space-y-6">
+                                        <div className="bg-white rounded-lg shadow p-6">
+                                            <h2 className="text-xl font-bold mb-4">参加予定のイベント</h2>
+                                            {myRegisteredEvents.length === 0 ? (
+                                                <p className="text-gray-600">参加予定のイベントはありません</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {myRegisteredEvents.map(event => (
+                                                        <div key={event.id} className="border rounded-lg p-4">
+                                                            <h3 className="font-bold text-lg mb-2">{event.title}</h3>
+                                                            <div className="text-sm text-gray-600 space-y-1 mb-3">
+                                                                <p>📅 {formatDateTime(event.date)}</p>
+                                                                {event.venueName && <p>🏢 {event.venueName}</p>}
+                                                                {event.address && <p>📍 {event.address}</p>}
+                                                                {event.fee && <p>💰 {event.fee}</p>}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEventToCancel(event);
+                                                                    setShowCancelConfirm(true);
+                                                                }}
+                                                                className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 text-sm"
+                                                            >
+                                                                参加をキャンセル
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {myOngoingEvents.length > 0 && (
+                                            <div className="bg-white rounded-lg shadow p-6">
+                                                <h2 className="text-xl font-bold mb-4">参加中のイベント</h2>
+                                                <div className="space-y-3">
+                                                    {myOngoingEvents.map(event => {
+                                                        const attendees = users.filter(u => event.attendances && event.attendances.includes(u.id));
+                                                        const isExpanded = expandedEventId === event.id;
+                                                        return (
+                                                            <div key={event.id} className="border rounded-lg p-4 bg-blue-50">
+                                                                <div className="flex items-start justify-between mb-2">
+                                                                    <h3 className="font-bold text-lg">{event.title}</h3>
+                                                                    <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                                                                        開催中
+                                                                    </span>
+                                                                </div>
+                                                                <div className="text-sm text-gray-600 space-y-1 mb-3">
+                                                                    <p>📅 {formatDateTime(event.date)}</p>
+                                                                    {event.venueName && <p>🏢 {event.venueName}</p>}
+                                                                    {event.address && <p>📍 {event.address}</p>}
+                                                                </div>
+                                                                
+                                                                <button
+                                                                    onClick={() => setExpandedEventId(isExpanded ? null : event.id)}
+                                                                    className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 text-sm mb-2"
+                                                                >
+                                                                    {isExpanded ? '▼ 参加者を隠す' : '▶ 参加者一覧を見る'}
+                                                                </button>
+
+                                                                {isExpanded && (
+                                                                    <div className="mt-3 border-t pt-3">
+                                                                        <div className="flex gap-2 mb-3">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    const publicAttendees = attendees.filter(u => 
+                                                                                        u.profile.privacySetting === 'public' && u.id !== currentUser.id
+                                                                                    );
+                                                                                    if (selectedAttendees.length === publicAttendees.length) {
+                                                                                        setSelectedAttendees([]);
+                                                                                    } else {
+                                                                                        setSelectedAttendees(publicAttendees.map(u => u.id));
+                                                                                    }
+                                                                                }}
+                                                                                className="bg-gray-200 px-3 py-1 rounded text-sm hover:bg-gray-300"
+                                                                            >
+                                                                                全員選択
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    if (selectedAttendees.length === 0) {
+                                                                                        alert('保存する参加者を選択してください');
+                                                                                        return;
+                                                                                    }
+                                                                                    const currentUserData = storage.get('currentUser');
+                                                                                    const existingContacts = currentUserData.contacts || [];
+                                                                                    const existingIds = existingContacts.map(c => c.userId);
+                                                                                    const newContacts = selectedAttendees
+                                                                                        .filter(id => !existingIds.includes(id))
+                                                                                        .map(userId => ({ userId, eventId: event.id, date: event.date }));
+                                                                                    if (newContacts.length === 0) {
+                                                                                        alert('新しく保存する参加者がいません');
+                                                                                        return;
+                                                                                    }
+                                                                                    const updatedUser = { ...currentUserData, contacts: [...existingContacts, ...newContacts] };
+                                                                                    storage.set('currentUser', updatedUser);
+                                                                                    const allUsers = storage.get('users') || [];
+                                                                                    storage.set('users', allUsers.map(u => u.id === currentUser.id ? updatedUser : u));
+                                                                                    alert(`${newContacts.length}名を名簿に保存しました`);
+                                                                                    setSelectedAttendees([]);
+                                                                                    window.location.reload();
+                                                                                }}
+                                                                                className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
+                                                                            >
+                                                                                名簿に保存 ({selectedAttendees.length})
+                                                                            </button>
+                                                                        </div>
+
+                                                                        <div className="space-y-2">
+                                                                            {attendees.map(attendee => {
+                                                                                const isPublic = attendee.profile.privacySetting === 'public';
+                                                                                const isOwn = attendee.id === currentUser.id;
+                                                                                return (
+                                                                                    <div key={attendee.id} className={`flex items-center gap-3 p-2 rounded ${!isPublic ? 'bg-gray-100' : 'hover:bg-gray-50'}`}>
+                                                                                        {!isOwn && isPublic && (
+                                                                                            <input
+                                                                                                type="checkbox"
+                                                                                                checked={selectedAttendees.includes(attendee.id)}
+                                                                                                onChange={() => {
+                                                                                                    if (selectedAttendees.includes(attendee.id)) {
+                                                                                                        setSelectedAttendees(selectedAttendees.filter(id => id !== attendee.id));
+                                                                                                    } else {
+                                                                                                        setSelectedAttendees([...selectedAttendees, attendee.id]);
+                                                                                                    }
+                                                                                                }}
+                                                                                            />
+                                                                                        )}
+                                                                                        <div 
+                                                                                            className="flex items-center gap-2 flex-1 cursor-pointer"
+                                                                                            onClick={() => isPublic && setSelectedProfile(attendee)}
+                                                                                        >
+                                                                                            {attendee.profile.photo && (
+                                                                                                <img src={attendee.profile.photo} alt="" className="w-10 h-10 rounded-full object-cover" />
+                                                                                            )}
+                                                                                            <div className="flex-1">
+                                                                                                <p className="font-medium text-sm">
+                                                                                                    {attendee.profile.fullName || attendee.profile.nickname || attendee.email}
+                                                                                                </p>
+                                                                                                {attendee.profile.fullName && attendee.profile.nickname && (
+                                                                                                    <p className="text-xs text-gray-500">（{attendee.profile.nickname}）</p>
+                                                                                                )}
+                                                                                                {isOwn && <span className="text-xs text-gray-500">(あなた)</span>}
+                                                                                            </div>
+                                                                                            {!isPublic && !isOwn && <span className="text-xs text-gray-500">🔒</span>}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="bg-white rounded-lg shadow p-6">
+                                            <h2 className="text-xl font-bold mb-4">参加済みのイベント（経歴）</h2>
+                                            {myAttendedEvents.length === 0 ? (
+                                                <p className="text-gray-600">参加済みのイベントはありません</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {myAttendedEvents.map(event => (
+                                                        <div key={event.id} className="border rounded-lg p-4 bg-gray-50">
+                                                            <div className="flex items-start justify-between mb-2">
+                                                                <h3 className="font-bold text-lg">{event.title}</h3>
+                                                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                                                                    出席済み
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-sm text-gray-600 space-y-1 mb-3">
+                                                                <p>📅 {formatDateTime(event.date)}</p>
+                                                                {event.venueName && <p>🏢 {event.venueName}</p>}
+                                                                {event.address && <p>📍 {event.address}</p>}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setViewingAttendees(event)}
+                                                                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 text-sm"
+                                                            >
+                                                                👥 出席者一覧を見る
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {myPageView === 'profile' && (
+                                    <div>
+                                        <div className="bg-white rounded-lg shadow p-6 mb-4">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="flex-1">
+                                                    <h2 className="text-xl font-bold mb-3">プロフィールプレビュー</h2>
+                                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                                        <label className="block text-sm font-medium mb-2">プライバシー設定</label>
+                                                        <div className="space-y-2">
+                                                            <label className="flex items-center text-sm cursor-pointer">
+                                                                <input 
+                                                                    type="radio" 
+                                                                    name="privacySettingPreview" 
+                                                                    value="public" 
+                                                                    checked={profileData.privacySetting === 'public'} 
+                                                                    onChange={(e) => {
+                                                                        const newData = {...profileData, privacySetting: e.target.value};
+                                                                        setProfileData(newData);
+                                                                        onUpdateProfile(newData);
+                                                                    }}
+                                                                    className="mr-2" 
+                                                                />
+                                                                <span>🌐 イベント参加者全員に公開</span>
+                                                            </label>
+                                                            <label className="flex items-center text-sm cursor-pointer">
+                                                                <input 
+                                                                    type="radio" 
+                                                                    name="privacySettingPreview" 
+                                                                    value="qr-only" 
+                                                                    checked={profileData.privacySetting === 'qr-only'} 
+                                                                    onChange={(e) => {
+                                                                        const newData = {...profileData, privacySetting: e.target.value};
+                                                                        setProfileData(newData);
+                                                                        onUpdateProfile(newData);
+                                                                    }}
+                                                                    className="mr-2" 
+                                                                />
+                                                                <span>🔒 QR交換した人とのみ公開</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => setIsEditingProfile(!isEditingProfile)}
+                                                    className="ml-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm whitespace-nowrap"
+                                                >
+                                                    {isEditingProfile ? '編集を閉じる' : '✏️ 編集'}
+                                                </button>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {(profileData.nickname || profileData.fullName) && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">名前</label>
+                                                        <p className="text-base font-bold">{profileData.fullName || profileData.nickname}</p>
+                                                        {profileData.fullName && profileData.nickname && (
+                                                            <p className="text-sm text-gray-600">（{profileData.nickname}）</p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                
+                                                {profileData.photo && (
+                                                    <div>
+                                                        <img src={profileData.photo} alt="プロフィール写真" className="w-24 h-24 rounded-full object-cover" />
+                                                    </div>
+                                                )}
+                                                
+                                                {profileData.company && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">会社・団体</label>
+                                                        <p className="text-base">{profileData.company}</p>
+                                                    </div>
+                                                )}
+                                                
+                                                {profileData.email && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">メール</label>
+                                                        <p className="text-base">{profileData.email}</p>
+                                                    </div>
+                                                )}
+                                                
+                                                {profileData.phoneNumber && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">電話</label>
+                                                        <p className="text-base">{profileData.phoneNumber}</p>
+                                                    </div>
+                                                )}
+                                                
+                                                {(profileData.lineAccount || profileData.instagram || profileData.threads || profileData.facebook || profileData.twitter || profileData.linkedin) && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">SNS</label>
+                                                        <div className="space-y-1">
+                                                            {profileData.lineAccount && <p className="text-sm">LINE: {profileData.lineAccount}</p>}
+                                                            {profileData.instagram && <p className="text-sm">Instagram: {profileData.instagram}</p>}
+                                                            {profileData.threads && <p className="text-sm">Threads: {profileData.threads}</p>}
+                                                            {profileData.facebook && <p className="text-sm">Facebook: {profileData.facebook}</p>}
+                                                            {profileData.twitter && <p className="text-sm">X: {profileData.twitter}</p>}
+                                                            {profileData.linkedin && <p className="text-sm">LinkedIn: {profileData.linkedin}</p>}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                {(profileData.businessCardFront || profileData.businessCardBack) && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">名刺</label>
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            {profileData.businessCardFront && <img src={profileData.businessCardFront} alt="名刺表" className="w-full rounded" />}
+                                                            {profileData.businessCardBack && <img src={profileData.businessCardBack} alt="名刺裏" className="w-full rounded" />}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                {profileData.introduction && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">自己紹介</label>
+                                                        <p className="text-base whitespace-pre-wrap">{profileData.introduction}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {isEditingProfile && (
+                                        <div className="bg-white rounded-lg shadow p-6">
+                                            <h2 className="text-xl font-bold mb-4">プロフィール編集</h2>
+                                        <form onSubmit={saveProfile} className="space-y-4">
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                                <p className="text-xs text-yellow-800">※ ニックネームまたは氏名のどちらか一方は必須です</p>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium mb-1">ニックネーム</label>
+                                                    <input type="text" value={profileData.nickname} onChange={(e) => setProfileData({...profileData, nickname: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium mb-1">氏名</label>
+                                                    <input type="text" value={profileData.fullName} onChange={(e) => setProfileData({...profileData, fullName: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">顔写真（任意）</label>
+                                                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'photo')} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                                {profileData.photo && <img src={profileData.photo} alt="顔写真" className="mt-2 w-20 h-20 rounded-full object-cover" />}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">メールアドレス（任意）</label>
+                                                <input type="email" value={profileData.email || ''} onChange={(e) => setProfileData({...profileData, email: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="公開用" />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">電話番号（任意）</label>
+                                                <input type="tel" value={profileData.phoneNumber} onChange={(e) => setProfileData({...profileData, phoneNumber: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">会社・団体名（任意）</label>
+                                                <input type="text" value={profileData.company} onChange={(e) => setProfileData({...profileData, company: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                            </div>
+
+                                            <div className="border-t pt-4">
+                                                <h3 className="font-semibold mb-3 text-sm">SNSアカウント（任意）</h3>
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">LINE</label>
+                                                        <input type="text" value={profileData.lineAccount} onChange={(e) => setProfileData({...profileData, lineAccount: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">Instagram</label>
+                                                        <input type="text" value={profileData.instagram} onChange={(e) => setProfileData({...profileData, instagram: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="@username" />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">Threads</label>
+                                                        <input type="text" value={profileData.threads} onChange={(e) => setProfileData({...profileData, threads: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="@username" />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">Facebook</label>
+                                                        <input type="text" value={profileData.facebook} onChange={(e) => setProfileData({...profileData, facebook: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">X (Twitter)</label>
+                                                        <input type="text" value={profileData.twitter} onChange={(e) => setProfileData({...profileData, twitter: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="@username" />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">LinkedIn</label>
+                                                        <input type="text" value={profileData.linkedin} onChange={(e) => setProfileData({...profileData, linkedin: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t pt-4">
+                                                <h3 className="font-semibold mb-3 text-sm">名刺（任意）</h3>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">表面</label>
+                                                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'businessCardFront')} className="w-full px-2 py-2 border rounded-lg text-xs" />
+                                                        {profileData.businessCardFront && <img src={profileData.businessCardFront} alt="名刺表" className="mt-2 w-full rounded" />}
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">裏面</label>
+                                                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'businessCardBack')} className="w-full px-2 py-2 border rounded-lg text-xs" />
+                                                        {profileData.businessCardBack && <img src={profileData.businessCardBack} alt="名刺裏" className="mt-2 w-full rounded" />}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">特技・自己紹介（任意）</label>
+                                                <textarea value={profileData.introduction} onChange={(e) => setProfileData({...profileData, introduction: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" rows="4" />
+                                            </div>
+
+                                            <button type="submit" className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700">
+                                                プロフィールを保存
+                                            </button>
+                                        </form>
+                                        </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {myPageView === 'contacts' && (
+                                    <div className="bg-white rounded-lg shadow p-6">
+                                        <h2 className="text-xl font-bold mb-4">名簿</h2>
+                                        <p>交流した人の名簿がここに表示されます</p>
+                                    </div>
+                                )}
+
+                                {myPageView === 'qr' && (
+                                    <div className="bg-white rounded-lg shadow p-6">
+                                        <h2 className="text-xl font-bold mb-4 text-center">マイQRコード</h2>
+                                        <div className="flex flex-col items-center">
+                                            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUser.qrCode)}`} alt="QR" className="mb-4" />
+                                            <p className="text-sm text-gray-600">交流会ID: {currentUser.qrCode}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {view === 'settings' && (
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <h2 className="text-xl font-bold mb-6">設定</h2>
+                                <div>
+                                    <h3 className="font-semibold mb-2">アカウント情報</h3>
+                                    <p className="text-sm text-gray-600">メール: {currentUser.email}</p>
+                                </div>
+                                {currentUser.isAdmin && (
+                                    <button onClick={() => setShowAdmin(true)} className="mt-6 w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700">
+                                        🔧 管理者パネルを開く
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        function AdminPanel({ users, onBack, onLogout }) {
+            const [events, setEvents] = useState([]);
+            const [showEventForm, setShowEventForm] = useState(false);
+            const [editingEvent, setEditingEvent] = useState(null);
+            const [eventForm, setEventForm] = useState({
+                title: '',
+                date: '',
+                endDate: '',
+                address: '',
+                venueName: '',
+                fee: ''
+            });
+            const [showQRScanner, setShowQRScanner] = useState(false);
+            const [selectedEventForCheckIn, setSelectedEventForCheckIn] = useState(null);
+            const [scannedQRCode, setScannedQRCode] = useState('');
+
+            const formatDateTime = (dateString) => {
+                const date = new Date(dateString);
+                return date.toLocaleString('ja-JP', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            useEffect(() => {
+                const savedEvents = storage.get('events') || [];
+                setEvents(savedEvents);
+            }, []);
+
+            const checkInUser = () => {
+                if (!scannedQRCode || !selectedEventForCheckIn) {
+                    alert('QRコードを入力してください');
+                    return;
+                }
+
+                const user = users.find(u => u.qrCode === scannedQRCode);
+                if (!user) {
+                    alert('無効なQRコードです');
+                    return;
+                }
+
+                const updatedEvents = events.map(event => {
+                    if (event.id === selectedEventForCheckIn.id) {
+                        const attendances = event.attendances || [];
+                        if (attendances.includes(user.id)) {
+                            alert('既に受付済みです');
+                            return event;
+                        }
+                        return { ...event, attendances: [...attendances, user.id] };
+                    }
+                    return event;
+                });
+
+                storage.set('events', updatedEvents);
+                setEvents(updatedEvents);
+                alert(`${user.profile.fullName || user.profile.nickname || user.email} を受付しました`);
+                setScannedQRCode('');
+            };
+
+            const resetForm = () => {
+                setEventForm({
+                    title: '',
+                    date: '',
+                    endDate: '',
+                    address: '',
+                    venueName: '',
+                    fee: ''
+                });
+                setEditingEvent(null);
+            };
+
+            const handleCreateEvent = () => {
+                resetForm();
+                setShowEventForm(true);
+            };
+
+            const handleEditEvent = (event) => {
+                setEventForm({
+                    title: event.title,
+                    date: event.date,
+                    endDate: event.endDate || '',
+                    address: event.address || '',
+                    venueName: event.venueName || '',
+                    fee: event.fee || ''
+                });
+                setEditingEvent(event);
+                setShowEventForm(true);
+            };
+
+            const handleSaveEvent = (e) => {
+                e.preventDefault();
+                
+                if (!eventForm.title || !eventForm.date) {
+                    alert('タイトルと開催日時は必須です');
+                    return;
+                }
+
+                let updatedEvents;
+                
+                if (editingEvent) {
+                    // Edit existing event
+                    updatedEvents = events.map(event => 
+                        event.id === editingEvent.id 
+                            ? { ...event, ...eventForm }
+                            : event
+                    );
+                    alert('イベントを更新しました');
+                } else {
+                    // Create new event
+                    const newEvent = {
+                        id: Date.now().toString(),
+                        ...eventForm,
+                        registrations: [],
+                        attendances: []
+                    };
+                    updatedEvents = [...events, newEvent];
+                    alert('イベントを作成しました');
+                }
+
+                storage.set('events', updatedEvents);
+                setEvents(updatedEvents);
+                resetForm();
+                setShowEventForm(false);
+            };
+
+            const handleDeleteEvent = (eventId) => {
+                if (window.confirm('このイベントを削除しますか？')) {
+                    const updatedEvents = events.filter(e => e.id !== eventId);
+                    storage.set('events', updatedEvents);
+                    setEvents(updatedEvents);
+                    alert('イベントを削除しました');
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="gradient-bg text-white p-4">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                                <button onClick={onBack} className="bg-white text-purple-600 px-3 py-2 rounded-lg text-sm">← 戻る</button>
+                                <h1 className="text-xl font-bold">管理者パネル</h1>
+                            </div>
+                            <button onClick={onLogout} className="bg-white text-purple-600 px-3 py-2 rounded-lg text-sm">ログアウト</button>
+                        </div>
+                    </header>
+
+                    <main className="p-4">
+                        {showQRScanner && selectedEventForCheckIn && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowQRScanner(false)}>
+                                <div className="bg-white rounded-lg p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex justify-between mb-4">
+                                        <h2 className="text-xl font-bold">受付</h2>
+                                        <button onClick={() => setShowQRScanner(false)} className="text-2xl">×</button>
+                                    </div>
+                                    <p className="text-sm text-gray-700 mb-4">参加者のQRコードIDを入力してください</p>
+                                    <input
+                                        type="text"
+                                        value={scannedQRCode}
+                                        onChange={(e) => setScannedQRCode(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-lg mb-4"
+                                        placeholder="KOSASENBU-xxxxx"
+                                    />
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={checkInUser}
+                                            className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
+                                        >
+                                            受付する
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowQRScanner(false);
+                                                setScannedQRCode('');
+                                            }}
+                                            className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500"
+                                        >
+                                            キャンセル
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-white rounded-lg shadow p-6 mb-4">
+                            <h2 className="text-xl font-bold mb-4">ダッシュボード</h2>
+                            <div className="space-y-2">
+                                <p className="text-gray-700">総ユーザー数: {users.length}</p>
+                                <p className="text-gray-700">総イベント数: {events.length}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow p-6 mb-4">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold">イベント管理</h2>
+                                {!showEventForm && (
+                                    <button
+                                        onClick={handleCreateEvent}
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
+                                    >
+                                        ➕ 新規イベント作成
+                                    </button>
+                                )}
+                            </div>
+
+                            {showEventForm && (
+                                <div className="mb-6 p-4 border-2 border-purple-200 rounded-lg bg-purple-50">
+                                    <h3 className="text-lg font-bold mb-4">
+                                        {editingEvent ? 'イベント編集' : '新規イベント作成'}
+                                    </h3>
+                                    <form onSubmit={handleSaveEvent} className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">
+                                                イベントタイトル <span className="text-red-600">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={eventForm.title}
+                                                onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
+                                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                placeholder="例：2月度 交流会"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">
+                                                    開催日時 <span className="text-red-600">*</span>
+                                                </label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={eventForm.date}
+                                                    onChange={(e) => setEventForm({...eventForm, date: e.target.value})}
+                                                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">終了日時</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={eventForm.endDate}
+                                                    onChange={(e) => setEventForm({...eventForm, endDate: e.target.value})}
+                                                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">住所</label>
+                                            <input
+                                                type="text"
+                                                value={eventForm.address}
+                                                onChange={(e) => setEventForm({...eventForm, address: e.target.value})}
+                                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                placeholder="例：東京都渋谷区渋谷1-1-1"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">施設名</label>
+                                            <input
+                                                type="text"
+                                                value={eventForm.venueName}
+                                                onChange={(e) => setEventForm({...eventForm, venueName: e.target.value})}
+                                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                placeholder="例：渋谷カンファレンスルーム"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">参加料金</label>
+                                            <input
+                                                type="text"
+                                                value={eventForm.fee}
+                                                onChange={(e) => setEventForm({...eventForm, fee: e.target.value})}
+                                                className="w-full px-3 py-2 border rounded-lg text-sm"
+                                                placeholder="例：3,000円"
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="submit"
+                                                className="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
+                                            >
+                                                {editingEvent ? '更新' : '作成'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    resetForm();
+                                                    setShowEventForm(false);
+                                                }}
+                                                className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500"
+                                            >
+                                                キャンセル
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                <h3 className="font-semibold text-gray-700">既存イベント一覧</h3>
+                                {events.length === 0 ? (
+                                    <p className="text-gray-500 text-sm">まだイベントがありません</p>
+                                ) : (
+                                    events.map(event => (
+                                        <div key={event.id} className="border rounded-lg p-4 bg-gray-50">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-bold text-lg">{event.title}</h4>
+                                                <div className="flex gap-2 flex-wrap">
+                                                    <button
+                                                        onClick={() => {
+                                                            const attendances = event.attendances || [];
+                                                            if (attendances.includes('admin-1')) {
+                                                                alert('既に出席済みです');
+                                                                return;
+                                                            }
+                                                            const updatedEvents = events.map(e => 
+                                                                e.id === event.id 
+                                                                    ? { ...e, attendances: [...attendances, 'admin-1'] }
+                                                                    : e
+                                                            );
+                                                            storage.set('events', updatedEvents);
+                                                            setEvents(updatedEvents);
+                                                            alert('自分を出席登録しました');
+                                                        }}
+                                                        className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 whitespace-nowrap"
+                                                    >
+                                                        ✓ 自分も出席
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedEventForCheckIn(event);
+                                                            setShowQRScanner(true);
+                                                        }}
+                                                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 whitespace-nowrap"
+                                                    >
+                                                        📷 受付
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleEditEvent(event)}
+                                                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                                                    >
+                                                        ✏️ 編集
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteEvent(event.id)}
+                                                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                                                    >
+                                                        🗑️ 削除
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-gray-600 space-y-1">
+                                                <p>📅 開催: {formatDateTime(event.date)}</p>
+                                                {event.endDate && <p>📅 終了: {formatDateTime(event.endDate)}</p>}
+                                                {event.venueName && <p>🏢 {event.venueName}</p>}
+                                                {event.address && <p>📍 {event.address}</p>}
+                                                {event.fee && <p>💰 {event.fee}</p>}
+                                                <p className="text-gray-500">参加希望: {event.registrations?.length || 0}名 / 出席: {event.attendances?.length || 0}名</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h2 className="text-xl font-bold mb-4">ユーザー一覧</h2>
+                            <div className="space-y-2">
+                                {users.map(user => (
+                                    <div key={user.id} className="flex justify-between items-center p-3 border rounded">
+                                        <span className="text-sm">{user.email}</span>
+                                        {user.isAdmin && <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">管理者</span>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
