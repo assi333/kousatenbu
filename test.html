@@ -5,26 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>交差点部 - 簡易テスト版</title>
     
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             min-height: 100vh;
             padding: 20px;
         }
-        
         .container {
             max-width: 600px;
             margin: 0 auto;
@@ -34,13 +27,7 @@
             padding: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 32px;
-        }
-        
+        h1 { text-align: center; margin-bottom: 30px; font-size: 32px; }
         .message-box {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
@@ -53,29 +40,24 @@
             max-height: 400px;
             overflow-y: auto;
         }
-        
         .message {
             margin-bottom: 10px;
             padding: 8px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 6px;
         }
-        
         .message.success {
             background: rgba(0, 255, 136, 0.2);
             border-left: 4px solid #00ff88;
         }
-        
         .message.error {
             background: rgba(255, 51, 102, 0.2);
             border-left: 4px solid #ff3366;
         }
-        
         .message.info {
             background: rgba(0, 217, 255, 0.2);
             border-left: 4px solid #00d9ff;
         }
-        
         .btn {
             width: 100%;
             padding: 15px;
@@ -87,33 +69,21 @@
             transition: all 0.3s ease;
             margin-bottom: 10px;
         }
-        
         .btn-primary {
             background: linear-gradient(135deg, #00d9ff, #7000ff);
             color: white;
         }
-        
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(0, 217, 255, 0.3);
         }
-        
         .btn-primary:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
         input, textarea {
             width: 100%;
             padding: 12px;
@@ -123,25 +93,14 @@
             color: white;
             font-size: 14px;
         }
-        
-        input::placeholder, textarea::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
+        input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.6); }
         input:focus, textarea:focus {
             outline: none;
             border-color: #00d9ff;
             background: rgba(255, 255, 255, 0.25);
         }
-        
-        .auth-section, .app-section {
-            display: none;
-        }
-        
-        .auth-section.active, .app-section.active {
-            display: block;
-        }
-        
+        .auth-section, .app-section { display: none; }
+        .auth-section.active, .app-section.active { display: block; }
         .user-info {
             text-align: center;
             margin-bottom: 20px;
@@ -149,7 +108,6 @@
             background: rgba(0, 0, 0, 0.2);
             border-radius: 12px;
         }
-        
         .step-info {
             background: rgba(255, 170, 0, 0.2);
             border-left: 4px solid #ffaa00;
@@ -167,12 +125,8 @@
             <div class="message info">[起動] アプリを読み込んでいます...</div>
         </div>
         
-        <!-- Auth Section -->
         <div id="authSection" class="auth-section active">
-            <div class="step-info">
-                <strong>ステップ1:</strong> ログインしてください
-            </div>
-            
+            <div class="step-info"><strong>ステップ1:</strong> ログインしてください</div>
             <div class="form-group">
                 <label>メールアドレス</label>
                 <input type="email" id="loginEmail" value="koukokunoai@gmail.com">
@@ -184,17 +138,12 @@
             <button class="btn btn-primary" onclick="testLogin()">ログインテスト</button>
         </div>
         
-        <!-- App Section -->
         <div id="appSection" class="app-section">
             <div class="user-info">
                 <div>ログイン中: <strong id="userName"></strong></div>
                 <div style="font-size: 12px; margin-top: 5px;" id="userEmail"></div>
             </div>
-            
-            <div class="step-info">
-                <strong>ステップ2:</strong> イベント作成をテストします
-            </div>
-            
+            <div class="step-info"><strong>ステップ2:</strong> イベント作成をテストします</div>
             <div class="form-group">
                 <label>イベント名</label>
                 <input type="text" id="eventTitle" value="テスト飲み会">
@@ -211,34 +160,23 @@
                 <label>定員</label>
                 <input type="number" id="eventCapacity" value="10">
             </div>
-            
-            <button class="btn btn-primary" id="createBtn" onclick="testCreateEvent()">
-                イベント作成テスト
-            </button>
-            
-            <button class="btn btn-primary" onclick="testReadEvents()" style="margin-top: 10px;">
-                イベント読み込みテスト
-            </button>
-            
-            <button class="btn btn-primary" onclick="logout()" style="background: linear-gradient(135deg, #ff3366, #ff6b9d); margin-top: 10px;">
-                ログアウト
-            </button>
+            <button class="btn btn-primary" id="createBtn" onclick="testCreateEvent()">イベント作成テスト</button>
+            <button class="btn btn-primary" onclick="testReadEvents()" style="margin-top: 10px;">イベント読み込みテスト</button>
+            <button class="btn btn-primary" onclick="logout()" style="background: linear-gradient(135deg, #ff3366, #ff6b9d); margin-top: 10px;">ログアウト</button>
         </div>
     </div>
 
     <script>
-        // Message logging
         function addMessage(text, type = 'info') {
             const messageBox = document.getElementById('messageBox');
             const message = document.createElement('div');
-            message.className = `message ${type}`;
+            message.className = 'message ' + type;
             const time = new Date().toLocaleTimeString();
-            message.textContent = `[${time}] ${text}`;
+            message.textContent = '[' + time + '] ' + text;
             messageBox.appendChild(message);
             messageBox.scrollTop = messageBox.scrollHeight;
         }
         
-        // Firebase Configuration
         addMessage('Firebase初期化開始...', 'info');
         
         const firebaseConfig = {
@@ -259,21 +197,14 @@
         
         const auth = firebase.auth();
         const db = firebase.firestore();
-        
         let currentUser = null;
         
-        // Test Firestore connection
         addMessage('Firestore接続テスト中...', 'info');
         db.collection('test').doc('connection').set({ test: true, timestamp: new Date() })
-            .then(() => {
-                addMessage('✅ Firestore書き込み成功', 'success');
-            })
-            .catch(error => {
-                addMessage('❌ Firestore接続エラー: ' + error.message, 'error');
-            });
+            .then(function() { addMessage('✅ Firestore書き込み成功', 'success'); })
+            .catch(function(error) { addMessage('❌ Firestore接続エラー: ' + error.message, 'error'); });
         
-        // Auth state observer
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(function(user) {
             if (user) {
                 addMessage('✅ 認証成功: ' + user.email, 'success');
                 currentUser = user;
@@ -297,38 +228,31 @@
             document.getElementById('userEmail').textContent = currentUser.email;
         }
         
-        async function testLogin() {
+        function testLogin() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            
             addMessage('📧 ログイン試行中: ' + email, 'info');
-            
             if (!password) {
                 addMessage('❌ パスワードを入力してください', 'error');
                 return;
             }
-            
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                addMessage('✅ ログイン成功！', 'success');
-            } catch (error) {
-                addMessage('❌ ログインエラー: ' + error.code + ' - ' + error.message, 'error');
-            }
+            auth.signInWithEmailAndPassword(email, password)
+                .then(function() { addMessage('✅ ログイン成功！', 'success'); })
+                .catch(function(error) { addMessage('❌ ログインエラー: ' + error.code + ' - ' + error.message, 'error'); });
         }
         
-        async function testCreateEvent() {
+        function testCreateEvent() {
             addMessage('🎉 イベント作成テスト開始', 'info');
-            
             const title = document.getElementById('eventTitle').value;
             const description = document.getElementById('eventDescription').value;
             const location = document.getElementById('eventLocation').value;
             const capacity = parseInt(document.getElementById('eventCapacity').value);
             
             addMessage('📝 入力値確認:', 'info');
-            addMessage(`  タイトル: ${title ? '✓' : '✗'}`, title ? 'success' : 'error');
-            addMessage(`  説明: ${description ? '✓' : '✗'}`, description ? 'success' : 'error');
-            addMessage(`  場所: ${location ? '✓' : '✗'}`, location ? 'success' : 'error');
-            addMessage(`  定員: ${capacity ? '✓' : '✗'}`, capacity ? 'success' : 'error');
+            addMessage('  タイトル: ' + (title ? '✓' : '✗'), title ? 'success' : 'error');
+            addMessage('  説明: ' + (description ? '✓' : '✗'), description ? 'success' : 'error');
+            addMessage('  場所: ' + (location ? '✓' : '✗'), location ? 'success' : 'error');
+            addMessage('  定員: ' + (capacity ? '✓' : '✗'), capacity ? 'success' : 'error');
             
             if (!title || !description || !location || !capacity) {
                 addMessage('❌ 全ての項目を入力してください', 'error');
@@ -343,7 +267,7 @@
                 organizerId: currentUser.uid,
                 organizerName: currentUser.displayName || currentUser.email,
                 participants: [],
-                date: new Date(Date.now() + 86400000), // 明日
+                date: new Date(Date.now() + 86400000),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             
@@ -354,5 +278,51 @@
             btn.disabled = true;
             btn.textContent = '作成中...';
             
-            try {
-                const doc
+            db.collection('events').add(eventData)
+                .then(function(docRef) {
+                    addMessage('✅✅✅ イベント作成成功！', 'success');
+                    addMessage('📄 ドキュメントID: ' + docRef.id, 'success');
+                    addMessage('🎊 Firebase Consoleで確認してください！', 'success');
+                    btn.textContent = '作成成功！もう一度テスト';
+                    btn.disabled = false;
+                })
+                .catch(function(error) {
+                    addMessage('❌❌❌ エラー発生', 'error');
+                    addMessage('エラーコード: ' + error.code, 'error');
+                    addMessage('エラー内容: ' + error.message, 'error');
+                    btn.textContent = 'エラー - 再試行';
+                    btn.disabled = false;
+                });
+        }
+        
+        function testReadEvents() {
+            addMessage('📖 イベント読み込みテスト開始', 'info');
+            db.collection('events').get()
+                .then(function(snapshot) {
+                    addMessage('✅ イベント取得成功', 'success');
+                    addMessage('📊 イベント数: ' + snapshot.size + '件', 'success');
+                    if (snapshot.size > 0) {
+                        addMessage('--- イベント一覧 ---', 'info');
+                        snapshot.forEach(function(doc, index) {
+                            const event = doc.data();
+                            addMessage((index + 1) + '. ' + event.title + ' (' + event.location + ')', 'info');
+                        });
+                    } else {
+                        addMessage('ℹ️ イベントがまだありません', 'info');
+                    }
+                })
+                .catch(function(error) { addMessage('❌ 読み込みエラー: ' + error.message, 'error'); });
+        }
+        
+        function logout() {
+            addMessage('👋 ログアウト中...', 'info');
+            auth.signOut();
+        }
+        
+        window.addEventListener('load', function() {
+            addMessage('✅ アプリ読み込み完了', 'success');
+            addMessage('--- テスト準備OK ---', 'success');
+        });
+    </script>
+</body>
+</html>
