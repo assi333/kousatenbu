@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交差点部 - 簡易テスト版</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+        
+        .message-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+        }
+        
+        .message.success {
+            background: rgba(0, 255, 136, 0.2);
+            border-left: 4px solid #00ff88;
+        }
+        
+        .message.error {
+            background: rgba(255, 51, 102, 0.2);
+            border-left: 4px solid #ff3366;
+        }
+        
+        .message.info {
+            background: rgba(0, 217, 255, 0.2);
+            border-left: 4px solid #00d9ff;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d9ff, #7000ff);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 217, 255, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #00d9ff;
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .auth-section, .app-section {
+            display: none;
+        }
+        
+        .auth-section.active, .app-section.active {
+            display: block;
+        }
+        
+        .user-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+        
+        .step-info {
+            background: rgba(255, 170, 0, 0.2);
+            border-left: 4px solid #ffaa00;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 交差点部テスト版</h1>
+        
+        <div class="message-box" id="messageBox">
+            <div class="message info">[起動] アプリを読み込んでいます...</div>
+        </div>
+        
+        <!-- Auth Section -->
+        <div id="authSection" class="auth-section active">
+            <div class="step-info">
+                <strong>ステップ1:</strong> ログインしてください
+            </div>
+            
+            <div class="form-group">
+                <label>メールアドレス</label>
+                <input type="email" id="loginEmail" value="koukokunoai@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>パスワード</label>
+                <input type="password" id="loginPassword">
+            </div>
+            <button class="btn btn-primary" onclick="testLogin()">ログインテスト</button>
+        </div>
+        
+        <!-- App Section -->
+        <div id="appSection" class="app-section">
+            <div class="user-info">
+                <div>ログイン中: <strong id="userName"></strong></div>
+                <div style="font-size: 12px; margin-top: 5px;" id="userEmail"></div>
+            </div>
+            
+            <div class="step-info">
+                <strong>ステップ2:</strong> イベント作成をテストします
+            </div>
+            
+            <div class="form-group">
+                <label>イベント名</label>
+                <input type="text" id="eventTitle" value="テスト飲み会">
+            </div>
+            <div class="form-group">
+                <label>説明</label>
+                <textarea id="eventDescription" rows="3">初めてのテストイベントです</textarea>
+            </div>
+            <div class="form-group">
+                <label>場所</label>
+                <input type="text" id="eventLocation" value="渋谷">
+            </div>
+            <div class="form-group">
+                <label>定員</label>
+                <input type="number" id="eventCapacity" value="10">
+            </div>
+            
+            <button class="btn btn-primary" id="createBtn" onclick="testCreateEvent()">
+                イベント作成テスト
+            </button>
+            
+            <button class="btn btn-primary" onclick="testReadEvents()" style="margin-top: 10px;">
+                イベント読み込みテスト
+            </button>
+            
+            <button class="btn btn-primary" onclick="logout()" style="background: linear-gradient(135deg, #ff3366, #ff6b9d); margin-top: 10px;">
+                ログアウト
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Message logging
+        function addMessage(text, type = 'info') {
+            const messageBox = document.getElementById('messageBox');
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            const time = new Date().toLocaleTimeString();
+            message.textContent = `[${time}] ${text}`;
+            messageBox.appendChild(message);
+            messageBox.scrollTop = messageBox.scrollHeight;
+        }
+        
+        // Firebase Configuration
+        addMessage('Firebase初期化開始...', 'info');
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAm6EWV8ThTnt_0h8QsI4Qf9ibn8Zr-MrY",
+            authDomain: "kousatenbu-app.firebaseapp.com",
+            projectId: "kousatenbu-app",
+            storageBucket: "kousatenbu-app.firebasestorage.app",
+            messagingSenderId: "915458075211",
+            appId: "1:915458075211:web:b5d578f74c84f3e21f3bce"
+        };
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            addMessage('✅ Firebase初期化成功', 'success');
+        } catch (error) {
+            addMessage('❌ Firebase初期化エラー: ' + error.message, 'error');
+        }
+        
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        let currentUser = null;
+        
+        // Test Firestore connection
+        addMessage('Firestore接続テスト中...', 'info');
+        db.collection('test').doc('connection').set({ test: true, timestamp: new Date() })
+            .then(() => {
+                addMessage('✅ Firestore書き込み成功', 'success');
+            })
+            .catch(error => {
+                addMessage('❌ Firestore接続エラー: ' + error.message, 'error');
+            });
+        
+        // Auth state observer
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                addMessage('✅ 認証成功: ' + user.email, 'success');
+                currentUser = user;
+                showAppSection();
+            } else {
+                addMessage('ℹ️ 未ログイン状態', 'info');
+                currentUser = null;
+                showAuthSection();
+            }
+        });
+        
+        function showAuthSection() {
+            document.getElementById('authSection').classList.add('active');
+            document.getElementById('appSection').classList.remove('active');
+        }
+        
+        function showAppSection() {
+            document.getElementById('authSection').classList.remove('active');
+            document.getElementById('appSection').classList.add('active');
+            document.getElementById('userName').textContent = currentUser.displayName || 'ユーザー';
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            addMessage('📧 ログイン試行中: ' + email, 'info');
+            
+            if (!password) {
+                addMessage('❌ パスワードを入力してください', 'error');
+                return;
+            }
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                addMessage('✅ ログイン成功！', 'success');
+            } catch (error) {
+                addMessage('❌ ログインエラー: ' + error.code + ' - ' + error.message, 'error');
+            }
+        }
+        
+        async function testCreateEvent() {
+            addMessage('🎉 イベント作成テスト開始', 'info');
+            
+            const title = document.getElementById('eventTitle').value;
+            const description = document.getElementById('eventDescription').value;
+            const location = document.getElementById('eventLocation').value;
+            const capacity = parseInt(document.getElementById('eventCapacity').value);
+            
+            addMessage('📝 入力値確認:', 'info');
+            addMessage(`  タイトル: ${title ? '✓' : '✗'}`, title ? 'success' : 'error');
+            addMessage(`  説明: ${description ? '✓' : '✗'}`, description ? 'success' : 'error');
+            addMessage(`  場所: ${location ? '✓' : '✗'}`, location ? 'success' : 'error');
+            addMessage(`  定員: ${capacity ? '✓' : '✗'}`, capacity ? 'success' : 'error');
+            
+            if (!title || !description || !location || !capacity) {
+                addMessage('❌ 全ての項目を入力してください', 'error');
+                return;
+            }
+            
+            const eventData = {
+                title: title,
+                description: description,
+                location: location,
+                capacity: capacity,
+                organizerId: currentUser.uid,
+                organizerName: currentUser.displayName || currentUser.email,
+                participants: [],
+                date: new Date(Date.now() + 86400000), // 明日
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            addMessage('📦 イベントデータ準備完了', 'success');
+            addMessage('💾 Firestoreへ書き込み開始...', 'info');
+            
+            const btn = document.getElementById('createBtn');
+            btn.disabled = true;
+            btn.textContent = '作成中...';
+            
+            try {
+                const doc
