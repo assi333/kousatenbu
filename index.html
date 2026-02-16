@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
@@ -69,6 +70,7 @@
             justify-content: center;
             font-weight: 700;
             font-size: 16px;
+            object-fit: cover;
         }
         
         .auth-container {
@@ -291,7 +293,7 @@
             border: 1px solid rgba(0, 217, 255, 0.3);
             border-radius: 24px;
             padding: 30px;
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -356,6 +358,7 @@
             border: 1px solid rgba(0, 217, 255, 0.2);
             border-radius: 20px;
             padding: 30px;
+            margin-bottom: 20px;
         }
         
         .profile-header {
@@ -366,15 +369,23 @@
         }
         
         .profile-avatar {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             background: linear-gradient(135deg, #00d9ff, #7000ff);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 900;
-            font-size: 32px;
+            font-size: 40px;
+            object-fit: cover;
+        }
+        
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
         }
         
         .qr-container {
@@ -385,7 +396,7 @@
             margin: 20px 0;
         }
         
-        #qrcode { display: flex; justify-content: center; margin: 20px 0; }
+        #qrcode, #userQrcode { display: flex; justify-content: center; margin: 20px 0; }
         
         .participants-list { max-height: 400px; overflow-y: auto; }
         
@@ -398,6 +409,12 @@
             border: 1px solid rgba(0, 217, 255, 0.2);
             border-radius: 12px;
             margin-bottom: 10px;
+            cursor: pointer;
+        }
+        
+        .participant-item:hover {
+            background: rgba(10, 14, 39, 0.6);
+            border-color: #00d9ff;
         }
         
         .participant-avatar {
@@ -410,6 +427,14 @@
             justify-content: center;
             font-weight: 700;
             font-size: 18px;
+            object-fit: cover;
+        }
+        
+        .participant-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
         }
         
         .participant-info { flex: 1; }
@@ -424,6 +449,68 @@
             justify-content: center;
             gap: 10px;
             margin-top: 15px;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed rgba(0, 217, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #00d9ff;
+            background: rgba(0, 217, 255, 0.05);
+        }
+        
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+        
+        .profile-field {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .profile-field:last-child {
+            border-bottom: none;
+        }
+        
+        .profile-field-label {
+            font-weight: 600;
+            color: #00d9ff;
+            margin-bottom: 5px;
+        }
+        
+        .profile-field-value {
+            color: #cbd5e0;
+        }
+        
+        .profile-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .profile-image-preview {
+            width: 100%;
+            height: 150px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid rgba(0, 217, 255, 0.2);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #00d9ff;
+            margin: 25px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 217, 255, 0.2);
         }
     </style>
 </head>
@@ -457,8 +544,9 @@
         
         <div id="signupForm" class="hidden">
             <div class="form-group">
-                <label>表示名</label>
-                <input type="text" id="signupName" placeholder="山田太郎">
+                <label>ニックネーム または 氏名 <span style="color: #ff3366;">*</span></label>
+                <input type="text" id="signupName" placeholder="山田太郎 または ニックネーム">
+                <small style="color: #a0aec0; font-size: 12px;">どちらか必須です</small>
             </div>
             <div class="form-group">
                 <label>メールアドレス</label>
@@ -473,8 +561,14 @@
                 <svg width="18" height="18" viewBox="0 0 18 18">
                     <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
                     <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-
-showLogin()">ログイン</a>
+                    <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                </svg>
+                Googleで登録
+            </button>
+            <div class="text-link">
+                すでにアカウントをお持ちの方は <a onclick="showLogin()">ログイン</a>
+            </div>
         </div>
     </div>
     
@@ -496,47 +590,131 @@ showLogin()">ログイン</a>
             </div>
             
             <div id="eventsTab">
-                <button class="btn btn-primary" onclick="showCreateNewEventModal()" style="max-width: 300px; margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="showCreateEventModal()" style="max-width: 300px; margin-bottom: 20px;">
                     ✨ 新しいイベントを作成
                 </button>
                 <div id="eventsList" class="cards-grid"></div>
             </div>
             
             <div id="myEventsTab" class="hidden">
-                <button class="btn btn-primary" onclick="showCreateNewEventModal()" style="max-width: 300px; margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="showCreateEventModal()" style="max-width: 300px; margin-bottom: 20px;">
                     ✨ 新しいイベントを作成
                 </button>
                 <div id="myEventsList" class="cards-grid"></div>
             </div>
             
             <div id="profileTab" class="hidden">
-                <div class="profile-section">
+<div class="profile-section">
                     <div class="profile-header">
-                        <div class="profile-avatar" id="profileAvatar"></div>
+                        <div class="profile-avatar" id="profileAvatar">
+                            <img id="profileAvatarImg" style="display:none;">
+                        </div>
                         <div>
                             <h2 id="profileName"></h2>
                             <p style="color: #a0aec0; font-size: 14px;" id="profileEmail"></p>
                         </div>
                     </div>
+                    
+                    <h3 class="section-title">基本情報</h3>
                     <div class="form-group">
-                        <label>表示名</label>
-                        <input type="text" id="profileNameInput">
+                        <label>氏名（任意）</label>
+                        <input type="text" id="profileRealName" placeholder="山田太郎">
                     </div>
                     <div class="form-group">
-                        <label>自己紹介</label>
-                        <textarea id="profileBio" rows="4" placeholder="自己紹介を入力してください"></textarea>
+                        <label>ニックネーム（任意）</label>
+                        <input type="text" id="profileNickname" placeholder="やまちゃん">
+                        <small style="color: #a0aec0; font-size: 12px;">氏名またはニックネームのどちらか必須</small>
                     </div>
+                    <div class="form-group">
+                        <label>顔写真（任意）</label>
+                        <div class="file-upload-area" onclick="document.getElementById('profilePhotoInput').click()">
+                            <input type="file" id="profilePhotoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+                            <p>📷 クリックして写真を選択</p>
+                            <img id="photoPreview" style="max-width: 200px; margin-top: 10px; display: none; border-radius: 12px;">
+                        </div>
+                    </div>
+                    
+                    <h3 class="section-title">連絡先（任意）</h3>
+                    <div class="form-group">
+                        <label>公開用メールアドレス</label>
+                        <input type="email" id="profilePublicEmail" placeholder="public@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>電話番号</label>
+                        <input type="tel" id="profilePhone" placeholder="090-1234-5678">
+                    </div>
+                    
+                    <h3 class="section-title">SNSアカウント（任意）</h3>
+                    <div class="form-group">
+                        <label>LINE ID</label>
+                        <input type="text" id="profileLine" placeholder="your-line-id">
+                    </div>
+                    <div class="form-group">
+                        <label>Instagram</label>
+                        <input type="text" id="profileInstagram" placeholder="@username">
+                    </div>
+                    <div class="form-group">
+                        <label>Threads</label>
+                        <input type="text" id="profileThreads" placeholder="@username">
+                    </div>
+                    <div class="form-group">
+                        <label>Facebook</label>
+                        <input type="text" id="profileFacebook" placeholder="facebook.com/username">
+                    </div>
+                    <div class="form-group">
+                        <label>X (Twitter)</label>
+                        <input type="text" id="profileTwitter" placeholder="@username">
+                    </div>
+                    <div class="form-group">
+                        <label>LinkedIn</label>
+                        <input type="text" id="profileLinkedin" placeholder="linkedin.com/in/username">
+                    </div>
+                    
+                    <h3 class="section-title">会社・その他（任意）</h3>
+                    <div class="form-group">
+                        <label>会社・団体名</label>
+                        <input type="text" id="profileCompany" placeholder="株式会社○○">
+                    </div>
+                    <div class="form-group">
+                        <label>名刺画像（表）</label>
+                        <div class="file-upload-area" onclick="document.getElementById('businessCardFrontInput').click()">
+                            <input type="file" id="businessCardFrontInput" accept="image/*" onchange="handleCardFrontUpload(event)">
+                            <p>🎴 クリックして名刺（表）を選択</p>
+                            <img id="cardFrontPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>名刺画像（裏）</label>
+                        <div class="file-upload-area" onclick="document.getElementById('businessCardBackInput').click()">
+                            <input type="file" id="businessCardBackInput" accept="image/*" onchange="handleCardBackUpload(event)">
+                            <p>🎴 クリックして名刺（裏）を選択</p>
+                            <img id="cardBackPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>自己紹介・特技</label>
+                        <textarea id="profileBio" rows="4" placeholder="自己紹介や特技を入力してください"></textarea>
+                    </div>
+                    
                     <button class="btn btn-primary" onclick="updateProfile()">プロフィールを更新</button>
+                    
+                    <div style="margin-top: 30px;">
+                        <h3 class="section-title">あなたのQRコード</h3>
+                        <div class="qr-container">
+                            <div id="userQrcode"></div>
+                            <p style="color: #333; margin-top: 15px; font-weight: 600;">このQRコードであなたのプロフィールを共有</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div id="createNewEventModal" class="modal">
+    <div id="createEventModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title">新しいイベント作成</h2>
-                <button class="close-btn" onclick="closeModal('createNewEventModal')">&times;</button>
+                <button class="close-btn" onclick="closeModal('createEventModal')">&times;</button>
             </div>
             <div class="form-group">
                 <label>イベント名</label>
@@ -606,7 +784,18 @@ showLogin()">ログイン</a>
             <div id="participantsList" class="participants-list"></div>
         </div>
     </div>
-<script>
+    
+    <div id="userProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">プロフィール</h2>
+                <button class="close-btn" onclick="closeModal('userProfileModal')">&times;</button>
+            </div>
+            <div id="userProfileContent"></div>
+        </div>
+    </div>
+
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAm6EWV8ThTnt_0h8QsI4Qf9ibn8Zr-MrY",
             authDomain: "kousatenbu-app.firebaseapp.com",
@@ -619,9 +808,13 @@ showLogin()">ログイン</a>
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        const storage = firebase.storage();
         let currentUser = null;
         let eventsListener = null;
         let myEventsListener = null;
+        let uploadedPhotoURL = null;
+        let uploadedCardFrontURL = null;
+        let uploadedCardBackURL = null;
         
         auth.onAuthStateChanged(function(user) {
             if (user) {
@@ -642,7 +835,21 @@ showLogin()">ログイン</a>
                     userRef.set({
                         uid: currentUser.uid,
                         email: currentUser.email,
-                        displayName: currentUser.displayName || 'ユーザー',
+                        displayName: currentUser.displayName || '',
+                        realName: '',
+                        nickname: currentUser.displayName || '',
+                        photoURL: currentUser.photoURL || '',
+                        publicEmail: '',
+                        phone: '',
+                        lineId: '',
+                        instagram: '',
+                        threads: '',
+                        facebook: '',
+                        twitter: '',
+                        linkedin: '',
+                        company: '',
+                        businessCardFront: '',
+                        businessCardBack: '',
                         bio: '',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -652,14 +859,39 @@ showLogin()">ログイン</a>
         }
         
         function updateUserDisplay() {
-            const displayName = currentUser.displayName || 'ユーザー';
-            document.getElementById('userName').textContent = displayName;
-            const initial = displayName.charAt(0).toUpperCase();
-            document.getElementById('userAvatar').textContent = initial;
-            document.getElementById('profileAvatar').textContent = initial;
-            document.getElementById('profileName').textContent = displayName;
-            document.getElementById('profileEmail').textContent = currentUser.email;
-            document.getElementById('profileNameInput').value = displayName;
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                const displayName = userData.realName || userData.nickname || 'ユーザー';
+                document.getElementById('userName').textContent = displayName;
+                
+                const avatarEl = document.getElementById('userAvatar');
+                if (userData.photoURL) {
+                    avatarEl.innerHTML = '<img src="' + userData.photoURL + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+                } else {
+                    const initial = displayName.charAt(0).toUpperCase();
+                    avatarEl.textContent = initial;
+                }
+                
+                const profileAvatarEl = document.getElementById('profileAvatar');
+                const profileAvatarImg = document.getElementById('profileAvatarImg');
+                if (userData.photoURL) {
+                    profileAvatarImg.src = userData.photoURL;
+                    profileAvatarImg.style.display = 'block';
+                    profileAvatarEl.textContent = '';
+                    profileAvatarEl.appendChild(profileAvatarImg);
+                } else {
+                    profileAvatarImg.style.display = 'none';
+                    const initial = displayName.charAt(0).toUpperCase();
+                    profileAvatarEl.textContent = initial;
+                }
+                
+                document.getElementById('profileName').textContent = displayName;
+                document.getElementById('profileEmail').textContent = currentUser.email;
+            });
+        }
+        
+        function getUserDisplayName(userData) {
+            return userData.realName || userData.nickname || userData.displayName || 'ユーザー';
         }
         
         function showLogin() {
@@ -733,8 +965,8 @@ showLogin()">ログイン</a>
             }
         }
         
-        function showCreateNewEventModal() {
-            document.getElementById('createNewEventModal').classList.add('active');
+        function showCreateEventModal() {
+            document.getElementById('createEventModal').classList.add('active');
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(19, 0, 0, 0);
@@ -771,7 +1003,7 @@ showLogin()">ログイン</a>
                 participants: [],
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(function() {
-                closeModal('createNewEventModal');
+                closeModal('createEventModal');
                 clearEventForm();
                 alert('イベントを作成しました!');
             }).catch(function(error) {
@@ -936,33 +1168,203 @@ showLogin()">ログイン</a>
                 } else {
                     let html = '';
                     participants.forEach(function(p) {
-                        const initial = p.userName.charAt(0).toUpperCase();
-                        const joinDate = new Date(p.joinedAt.seconds * 1000);
-                        html += '<div class="participant-item"><div class="participant-avatar">' + initial + '</div>';
-                        html += '<div class="participant-info"><div class="participant-name">' + p.userName + '</div>';
-                        html += '<div class="participant-time">参加日時: ' + formatDateTime(joinDate) + '</div></div></div>';
+                        db.collection('users').doc(p.userId).get().then(function(userDoc) {
+                            if (userDoc.exists) {
+                                const userData = userDoc.data();
+                                const displayName = getUserDisplayName(userData);
+                                const initial = displayName.charAt(0).toUpperCase();
+                                const joinDate = new Date(p.joinedAt.seconds * 1000);
+                                let itemHtml = '<div class="participant-item" onclick="showUserProfile(\'' + p.userId + '\')">';
+                                itemHtml += '<div class="participant-avatar">';
+                                if (userData.photoURL) {
+                                    itemHtml += '<img src="' + userData.photoURL + '">';
+                                } else {
+                                    itemHtml += initial;
+                                }
+                                itemHtml += '</div>';
+                                itemHtml += '<div class="participant-info"><div class="participant-name">' + displayName + '</div>';
+                                itemHtml += '<div class="participant-time">参加日時: ' + formatDateTime(joinDate) + '</div></div></div>';
+                                document.getElementById('participantsList').innerHTML += itemHtml;
+                            }
+                        });
                     });
-                    document.getElementById('participantsList').innerHTML = html;
                 }
                 document.getElementById('participantsModal').classList.add('active');
+            });
+        }
+        
+        function showUserProfile(userId) {
+            db.collection('users').doc(userId).get().then(function(doc) {
+                if (!doc.exists) return;
+                const userData = doc.data();
+                const displayName = getUserDisplayName(userData);
+                
+                let content = '<div class="profile-header"><div class="profile-avatar">';
+                if (userData.photoURL) {
+                    content += '<img src="' + userData.photoURL + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+                } else {
+                    content += displayName.charAt(0).toUpperCase();
+                }
+                content += '</div><div><h2>' + displayName + '</h2></div></div>';
+                
+                if (userData.realName) content += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
+                if (userData.nickname) content += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
+                if (userData.publicEmail) content += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
+                if (userData.phone) content += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
+                if (userData.lineId) content += '<div class="profile-field"><div class="profile-field-label">LINE</div><div class="profile-field-value">' + userData.lineId + '</div></div>';
+                if (userData.instagram) content += '<div class="profile-field"><div class="profile-field-label">Instagram</div><div class="profile-field-value">' + userData.instagram + '</div></div>';
+                if (userData.threads) content += '<div class="profile-field"><div class="profile-field-label">Threads</div><div class="profile-field-value">' + userData.threads + '</div></div>';
+                if (userData.facebook) content += '<div class="profile-field"><div class="profile-field-label">Facebook</div><div class="profile-field-value">' + userData.facebook + '</div></div>';
+                if (userData.twitter) content += '<div class="profile-field"><div class="profile-field-label">X</div><div class="profile-field-value">' + userData.twitter + '</div></div>';
+                if (userData.linkedin) content += '<div class="profile-field"><div class="profile-field-label">LinkedIn</div><div class="profile-field-value">' + userData.linkedin + '</div></div>';
+                if (userData.company) content += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
+                if (userData.bio) content += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
+                
+                if (userData.businessCardFront || userData.businessCardBack) {
+                    content += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-images">';
+                    if (userData.businessCardFront) content += '<img src="' + userData.businessCardFront + '" class="profile-image-preview">';
+                    if (userData.businessCardBack) content += '<img src="' + userData.businessCardBack + '" class="profile-image-preview">';
+                    content += '</div></div>';
+                }
+                
+                document.getElementById('userProfileContent').innerHTML = content;
+                closeModal('participantsModal');
+                document.getElementById('userProfileModal').classList.add('active');
             });
         }
         
         function loadProfile() {
             db.collection('users').doc(currentUser.uid).get().then(function(userDoc) {
                 const userData = userDoc.data();
-                if (userData && userData.bio) document.getElementById('profileBio').value = userData.bio;
+                if (userData) {
+                    document.getElementById('profileRealName').value = userData.realName || '';
+                    document.getElementById('profileNickname').value = userData.nickname || '';
+                    document.getElementById('profilePublicEmail').value = userData.publicEmail || '';
+                    document.getElementById('profilePhone').value = userData.phone || '';
+                    document.getElementById('profileLine').value = userData.lineId || '';
+                    document.getElementById('profileInstagram').value = userData.instagram || '';
+                    document.getElementById('profileThreads').value = userData.threads || '';
+                    document.getElementById('profileFacebook').value = userData.facebook || '';
+                    document.getElementById('profileTwitter').value = userData.twitter || '';
+                    document.getElementById('profileLinkedin').value = userData.linkedin || '';
+                    document.getElementById('profileCompany').value = userData.company || '';
+                    document.getElementById('profileBio').value = userData.bio || '';
+                    
+                    if (userData.photoURL) {
+                        document.getElementById('photoPreview').src = userData.photoURL;
+                        document.getElementById('photoPreview').style.display = 'block';
+                        uploadedPhotoURL = userData.photoURL;
+                    }
+                    if (userData.businessCardFront) {
+                        document.getElementById('cardFrontPreview').src = userData.businessCardFront;
+                        document.getElementById('cardFrontPreview').style.display = 'block';
+                        uploadedCardFrontURL = userData.businessCardFront;
+                    }
+                    if (userData.businessCardBack) {
+                        document.getElementById('cardBackPreview').src = userData.businessCardBack;
+                        document.getElementById('cardBackPreview').style.display = 'block';
+                        uploadedCardBackURL = userData.businessCardBack;
+                    }
+                }
+                generateUserQRCode();
+            });
+        }
+        
+        function generateUserQRCode() {
+            document.getElementById('userQrcode').innerHTML = '';
+            new QRCode(document.getElementById('userQrcode'), {
+                text: 'kousatenbu://user/' + currentUser.uid,
+                width: 200, height: 200,
+                colorDark: '#0a0e27', colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+        
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('photoPreview').src = e.target.result;
+                document.getElementById('photoPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('profile-photos/' + currentUser.uid + '/' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                uploadedPhotoURL = url;
+            });
+        }
+        
+        function handleCardFrontUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('cardFrontPreview').src = e.target.result;
+                document.getElementById('cardFrontPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('business-cards/' + currentUser.uid + '/front-' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                uploadedCardFrontURL = url;
+            });
+        }
+        
+        function handleCardBackUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('cardBackPreview').src = e.target.result;
+                document.getElementById('cardBackPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('business-cards/' + currentUser.uid + '/back-' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                uploadedCardBackURL = url;
             });
         }
         
         function updateProfile() {
-            const displayName = document.getElementById('profileNameInput').value;
-            const bio = document.getElementById('profileBio').value;
+            const realName = document.getElementById('profileRealName').value;
+            const nickname = document.getElementById('profileNickname').value;
+            
+            if (!realName && !nickname) {
+                alert('氏名またはニックネームのどちらかを入力してください');
+                return;
+            }
+            
+            const displayName = realName || nickname;
+            const profileData = {
+                displayName: displayName,
+                realName: realName,
+                nickname: nickname,
+                photoURL: uploadedPhotoURL || '',
+                publicEmail: document.getElementById('profilePublicEmail').value,
+                phone: document.getElementById('profilePhone').value,
+                lineId: document.getElementById('profileLine').value,
+                instagram: document.getElementById('profileInstagram').value,
+                threads: document.getElementById('profileThreads').value,
+                facebook: document.getElementById('profileFacebook').value,
+                twitter: document.getElementById('profileTwitter').value,
+                linkedin: document.getElementById('profileLinkedin').value,
+                company: document.getElementById('profileCompany').value,
+                businessCardFront: uploadedCardFrontURL || '',
+                businessCardBack: uploadedCardBackURL || '',
+                bio: document.getElementById('profileBio').value
+            };
+            
             currentUser.updateProfile({ displayName: displayName }).then(function() {
-                return db.collection('users').doc(currentUser.uid).update({
-                    displayName: displayName,
-                    bio: bio
-                });
+                return db.collection('users').doc(currentUser.uid).update(profileData);
             }).then(function() {
                 updateUserDisplay();
                 alert('プロフィールを更新しました!');
