@@ -473,14 +473,8 @@
                 <svg width="18" height="18" viewBox="0 0 18 18">
                     <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
                     <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-                    <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
-                    <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
-                </svg>
-                Googleで登録
-            </button>
-            <div class="text-link">
-                すでにアカウントをお持ちの方は <a onclick="showLogin()">ログイン</a>
-            </div>
+
+showLogin()">ログイン</a>
         </div>
     </div>
     
@@ -502,14 +496,14 @@
             </div>
             
             <div id="eventsTab">
-                <button class="btn btn-primary" onclick="showCreateEventModal()" style="max-width: 300px; margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="showCreateNewEventModal()" style="max-width: 300px; margin-bottom: 20px;">
                     ✨ 新しいイベントを作成
                 </button>
                 <div id="eventsList" class="cards-grid"></div>
             </div>
             
             <div id="myEventsTab" class="hidden">
-                <button class="btn btn-primary" onclick="showCreateEventModal()" style="max-width: 300px; margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="showCreateNewEventModal()" style="max-width: 300px; margin-bottom: 20px;">
                     ✨ 新しいイベントを作成
                 </button>
                 <div id="myEventsList" class="cards-grid"></div>
@@ -538,11 +532,11 @@
         </div>
     </div>
     
-    <div id="createEventModal" class="modal">
+    <div id="createNewEventModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title">新しいイベント作成</h2>
-                <button class="close-btn" onclick="closeModal('createEventModal')">&times;</button>
+                <button class="close-btn" onclick="closeModal('createNewEventModal')">&times;</button>
             </div>
             <div class="form-group">
                 <label>イベント名</label>
@@ -576,7 +570,7 @@
                     <input type="number" id="eventFee" placeholder="例: 3000" min="0">
                 </div>
             </div>
-            <button class="btn btn-primary" onclick="createEvent()">イベントを作成</button>
+            <button class="btn btn-primary" onclick="createNewEvent()">イベントを作成</button>
         </div>
     </div>
     
@@ -739,8 +733,8 @@
             }
         }
         
-        function showCreateEventModal() {
-            document.getElementById('createEventModal').classList.add('active');
+        function showCreateNewEventModal() {
+            document.getElementById('createNewEventModal').classList.add('active');
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(19, 0, 0, 0);
@@ -750,7 +744,7 @@
             document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
         }
         
-        function createEvent() {
+        function createNewEvent() {
             const title = document.getElementById('eventTitle').value;
             const description = document.getElementById('eventDescription').value;
             const startDate = document.getElementById('eventStartDate').value;
@@ -777,7 +771,7 @@
                 participants: [],
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(function() {
-                closeModal('createEventModal');
+                closeModal('createNewEventModal');
                 clearEventForm();
                 alert('イベントを作成しました!');
             }).catch(function(error) {
