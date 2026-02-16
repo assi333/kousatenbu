@@ -1400,23 +1400,30 @@
         }
         
         function handlePhotoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('photoPreview').src = e.target.result;
-                document.getElementById('photoPreview').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-            
-            const storageRef = storage.ref('profile-photos/' + currentUser.uid + '/' + Date.now() + '-' + file.name);
-            storageRef.put(file).then(function(snapshot) {
-                return snapshot.ref.getDownloadURL();
-            }).then(function(url) {
-                uploadedPhotoURL = url;
-            });
-        }
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    alert('画像をアップロード中です。完了までお待ちください...');
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('photoPreview').src = e.target.result;
+        document.getElementById('photoPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    
+    const storageRef = storage.ref('profile-photos/' + currentUser.uid + '/' + Date.now() + '-' + file.name);
+    storageRef.put(file).then(function(snapshot) {
+        return snapshot.ref.getDownloadURL();
+    }).then(function(url) {
+        uploadedPhotoURL = url;
+        alert('顔写真のアップロードが完了しました！「保存」ボタンを押してください。');
+    }).catch(function(error) {
+        alert('アップロードエラー: ' + error.message);
+    });
+}
         
+
         function handleCardFrontUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1436,22 +1443,28 @@
         }
         
         function handleCardBackUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('cardBackPreview').src = e.target.result;
-                document.getElementById('cardBackPreview').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-            
-            const storageRef = storage.ref('business-cards/' + currentUser.uid + '/back-' + Date.now() + '-' + file.name);
-            storageRef.put(file).then(function(snapshot) {
-                return snapshot.ref.getDownloadURL();
-            }).then(function(url) {
-                uploadedCardBackURL = url;
-            });
-        }
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    alert('名刺（裏）をアップロード中です。完了までお待ちください...');
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('cardBackPreview').src = e.target.result;
+        document.getElementById('cardBackPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    
+    const storageRef = storage.ref('business-cards/' + currentUser.uid + '/back-' + Date.now() + '-' + file.name);
+    storageRef.put(file).then(function(snapshot) {
+        return snapshot.ref.getDownloadURL();
+    }).then(function(url) {
+        uploadedCardBackURL = url;
+        alert('名刺（裏）のアップロードが完了しました！「保存」ボタンを押してください。');
+    }).catch(function(error) {
+        alert('アップロードエラー: ' + error.message);
+    });
+}
         
         function updateProfile() {
             const realName = document.getElementById('profileRealName').value;
