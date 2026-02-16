@@ -151,7 +151,7 @@
             border: 1px solid rgba(0, 217, 255, 0.3);
         }
         
-        .btn-small { padding: 10px 16px; font-size: 13px; }
+        .btn-small { padding: 10px 16px; font-size: 13px; width: auto; }
         
         .text-link {
             text-align: center;
@@ -359,6 +359,13 @@
             border-radius: 20px;
             padding: 30px;
             margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .profile-edit-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
         }
         
         .profile-header {
@@ -483,10 +490,12 @@
             font-weight: 600;
             color: #00d9ff;
             margin-bottom: 5px;
+            font-size: 14px;
         }
         
         .profile-field-value {
             color: #cbd5e0;
+            word-break: break-word;
         }
         
         .profile-images {
@@ -604,105 +613,113 @@
             </div>
             
             <div id="profileTab" class="hidden">
-<div class="profile-section">
-                    <div class="profile-header">
-                        <div class="profile-avatar" id="profileAvatar">
-                            <img id="profileAvatarImg" style="display:none;">
-                        </div>
-                        <div>
-                            <h2 id="profileName"></h2>
-                            <p style="color: #a0aec0; font-size: 14px;" id="profileEmail"></p>
-                        </div>
-                    </div>
+                <div class="profile-section">
+                    <button class="btn btn-secondary btn-small profile-edit-btn" id="editProfileBtn" onclick="toggleProfileEdit()">✏️ 編集</button>
                     
-                    <h3 class="section-title">基本情報</h3>
-                    <div class="form-group">
-                        <label>氏名（任意）</label>
-                        <input type="text" id="profileRealName" placeholder="山田太郎">
-                    </div>
-                    <div class="form-group">
-                        <label>ニックネーム（任意）</label>
-                        <input type="text" id="profileNickname" placeholder="やまちゃん">
-                        <small style="color: #a0aec0; font-size: 12px;">氏名またはニックネームのどちらか必須</small>
-                    </div>
-                    <div class="form-group">
-                        <label>顔写真（任意）</label>
-                        <div class="file-upload-area" onclick="document.getElementById('profilePhotoInput').click()">
-                            <input type="file" id="profilePhotoInput" accept="image/*" onchange="handlePhotoUpload(event)">
-                            <p>📷 クリックして写真を選択</p>
-                            <img id="photoPreview" style="max-width: 200px; margin-top: 10px; display: none; border-radius: 12px;">
+                    <div id="profileViewMode">
+                        <div class="profile-header">
+                            <div class="profile-avatar" id="profileAvatarView"></div>
+                            <div>
+                                <h2 id="profileNameView"></h2>
+                                <p style="color: #a0aec0; font-size: 14px;" id="profileEmailView"></p>
+                            </div>
+                        </div>
+                        <div id="profileFieldsView"></div>
+                        
+                        <div style="margin-top: 30px;">
+                            <h3 class="section-title">あなたのQRコード</h3>
+                            <div class="qr-container">
+                                <div id="userQrcode"></div>
+                                <p style="color: #333; margin-top: 15px; font-weight: 600;">このQRコードであなたのプロフィールを共有</p>
+                            </div>
                         </div>
                     </div>
                     
-                    <h3 class="section-title">連絡先（任意）</h3>
-                    <div class="form-group">
-                        <label>公開用メールアドレス</label>
-                        <input type="email" id="profilePublicEmail" placeholder="public@email.com">
-                    </div>
-                    <div class="form-group">
-                        <label>電話番号</label>
-                        <input type="tel" id="profilePhone" placeholder="090-1234-5678">
-                    </div>
-                    
-                    <h3 class="section-title">SNSアカウント（任意）</h3>
-                    <div class="form-group">
-                        <label>LINE ID</label>
-                        <input type="text" id="profileLine" placeholder="your-line-id">
-                    </div>
-                    <div class="form-group">
-                        <label>Instagram</label>
-                        <input type="text" id="profileInstagram" placeholder="@username">
-                    </div>
-                    <div class="form-group">
-                        <label>Threads</label>
-                        <input type="text" id="profileThreads" placeholder="@username">
-                    </div>
-                    <div class="form-group">
-                        <label>Facebook</label>
-                        <input type="text" id="profileFacebook" placeholder="facebook.com/username">
-                    </div>
-                    <div class="form-group">
-                        <label>X (Twitter)</label>
-                        <input type="text" id="profileTwitter" placeholder="@username">
-                    </div>
-                    <div class="form-group">
-                        <label>LinkedIn</label>
-                        <input type="text" id="profileLinkedin" placeholder="linkedin.com/in/username">
-                    </div>
-                    
-                    <h3 class="section-title">会社・その他（任意）</h3>
-                    <div class="form-group">
-                        <label>会社・団体名</label>
-                        <input type="text" id="profileCompany" placeholder="株式会社○○">
-                    </div>
-                    <div class="form-group">
-                        <label>名刺画像（表）</label>
-                        <div class="file-upload-area" onclick="document.getElementById('businessCardFrontInput').click()">
-                            <input type="file" id="businessCardFrontInput" accept="image/*" onchange="handleCardFrontUpload(event)">
-                            <p>🎴 クリックして名刺（表）を選択</p>
-                            <img id="cardFrontPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
+                    <div id="profileEditMode" class="hidden">
+<h3 class="section-title">基本情報</h3>
+                        <div class="form-group">
+                            <label>氏名（任意）</label>
+                            <input type="text" id="profileRealName" placeholder="山田太郎">
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>名刺画像（裏）</label>
-                        <div class="file-upload-area" onclick="document.getElementById('businessCardBackInput').click()">
-                            <input type="file" id="businessCardBackInput" accept="image/*" onchange="handleCardBackUpload(event)">
-                            <p>🎴 クリックして名刺（裏）を選択</p>
-                            <img id="cardBackPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
+                        <div class="form-group">
+                            <label>ニックネーム（任意）</label>
+                            <input type="text" id="profileNickname" placeholder="やまちゃん">
+                            <small style="color: #a0aec0; font-size: 12px;">氏名またはニックネームのどちらか必須</small>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>自己紹介・特技</label>
-                        <textarea id="profileBio" rows="4" placeholder="自己紹介や特技を入力してください"></textarea>
-                    </div>
-                    
-                    <button class="btn btn-primary" onclick="updateProfile()">プロフィールを更新</button>
-                    
-                    <div style="margin-top: 30px;">
-                        <h3 class="section-title">あなたのQRコード</h3>
-                        <div class="qr-container">
-                            <div id="userQrcode"></div>
-                            <p style="color: #333; margin-top: 15px; font-weight: 600;">このQRコードであなたのプロフィールを共有</p>
+                        <div class="form-group">
+                            <label>顔写真（任意）</label>
+                            <div class="file-upload-area" onclick="document.getElementById('profilePhotoInput').click()">
+                                <input type="file" id="profilePhotoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+                                <p>📷 クリックして写真を選択</p>
+                                <img id="photoPreview" style="max-width: 200px; margin-top: 10px; display: none; border-radius: 12px;">
+                            </div>
+                        </div>
+                        
+                        <h3 class="section-title">連絡先（任意）</h3>
+                        <div class="form-group">
+                            <label>公開用メールアドレス</label>
+                            <input type="email" id="profilePublicEmail" placeholder="public@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label>電話番号</label>
+                            <input type="tel" id="profilePhone" placeholder="090-1234-5678">
+                        </div>
+                        
+                        <h3 class="section-title">SNSアカウント（任意）</h3>
+                        <div class="form-group">
+                            <label>LINE ID</label>
+                            <input type="text" id="profileLine" placeholder="your-line-id">
+                        </div>
+                        <div class="form-group">
+                            <label>Instagram</label>
+                            <input type="text" id="profileInstagram" placeholder="@username">
+                        </div>
+                        <div class="form-group">
+                            <label>Threads</label>
+                            <input type="text" id="profileThreads" placeholder="@username">
+                        </div>
+                        <div class="form-group">
+                            <label>Facebook</label>
+                            <input type="text" id="profileFacebook" placeholder="facebook.com/username">
+                        </div>
+                        <div class="form-group">
+                            <label>X (Twitter)</label>
+                            <input type="text" id="profileTwitter" placeholder="@username">
+                        </div>
+                        <div class="form-group">
+                            <label>LinkedIn</label>
+                            <input type="text" id="profileLinkedin" placeholder="linkedin.com/in/username">
+                        </div>
+                        
+                        <h3 class="section-title">会社・その他（任意）</h3>
+                        <div class="form-group">
+                            <label>会社・団体名</label>
+                            <input type="text" id="profileCompany" placeholder="株式会社○○">
+                        </div>
+                        <div class="form-group">
+                            <label>名刺画像（表）</label>
+                            <div class="file-upload-area" onclick="document.getElementById('businessCardFrontInput').click()">
+                                <input type="file" id="businessCardFrontInput" accept="image/*" onchange="handleCardFrontUpload(event)">
+                                <p>🎴 クリックして名刺（表）を選択</p>
+                                <img id="cardFrontPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>名刺画像（裏）</label>
+                            <div class="file-upload-area" onclick="document.getElementById('businessCardBackInput').click()">
+                                <input type="file" id="businessCardBackInput" accept="image/*" onchange="handleCardBackUpload(event)">
+                                <p>🎴 クリックして名刺（裏）を選択</p>
+                                <img id="cardBackPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>自己紹介・特技</label>
+                            <textarea id="profileBio" rows="4" placeholder="自己紹介や特技を入力してください"></textarea>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="cancelProfileEdit()">キャンセル</button>
+                            <button class="btn btn-primary" onclick="updateProfile()">保存</button>
                         </div>
                     </div>
                 </div>
@@ -871,22 +888,6 @@
                     const initial = displayName.charAt(0).toUpperCase();
                     avatarEl.textContent = initial;
                 }
-                
-                const profileAvatarEl = document.getElementById('profileAvatar');
-                const profileAvatarImg = document.getElementById('profileAvatarImg');
-                if (userData.photoURL) {
-                    profileAvatarImg.src = userData.photoURL;
-                    profileAvatarImg.style.display = 'block';
-                    profileAvatarEl.textContent = '';
-                    profileAvatarEl.appendChild(profileAvatarImg);
-                } else {
-                    profileAvatarImg.style.display = 'none';
-                    const initial = displayName.charAt(0).toUpperCase();
-                    profileAvatarEl.textContent = initial;
-                }
-                
-                document.getElementById('profileName').textContent = displayName;
-                document.getElementById('profileEmail').textContent = currentUser.email;
             });
         }
         
@@ -963,6 +964,29 @@
                 document.getElementById('profileTab').classList.remove('hidden');
                 loadProfile();
             }
+        }
+        
+        function toggleProfileEdit() {
+            const viewMode = document.getElementById('profileViewMode');
+            const editMode = document.getElementById('profileEditMode');
+            const btn = document.getElementById('editProfileBtn');
+            
+            if (viewMode.classList.contains('hidden')) {
+                viewMode.classList.remove('hidden');
+                editMode.classList.add('hidden');
+                btn.textContent = '✏️ 編集';
+            } else {
+                viewMode.classList.add('hidden');
+                editMode.classList.remove('hidden');
+                btn.textContent = '👁️ 表示';
+                loadProfileForEdit();
+            }
+        }
+        
+        function cancelProfileEdit() {
+            document.getElementById('profileViewMode').classList.remove('hidden');
+            document.getElementById('profileEditMode').classList.add('hidden');
+            document.getElementById('editProfileBtn').textContent = '✏️ 編集';
         }
         
         function showCreateEventModal() {
@@ -1163,10 +1187,10 @@
             db.collection('events').doc(eventId).get().then(function(doc) {
                 const event = doc.data();
                 const participants = event.participants || [];
+                document.getElementById('participantsList').innerHTML = '';
                 if (participants.length === 0) {
                     document.getElementById('participantsList').innerHTML = '<div class="empty-state"><p>参加者がまだいません</p></div>';
                 } else {
-                    let html = '';
                     participants.forEach(function(p) {
                         db.collection('users').doc(p.userId).get().then(function(userDoc) {
                             if (userDoc.exists) {
@@ -1237,6 +1261,52 @@
             db.collection('users').doc(currentUser.uid).get().then(function(userDoc) {
                 const userData = userDoc.data();
                 if (userData) {
+                    renderProfileView(userData);
+                    generateUserQRCode();
+                }
+            });
+        }
+        
+        function renderProfileView(userData) {
+            const displayName = getUserDisplayName(userData);
+            document.getElementById('profileNameView').textContent = displayName;
+            document.getElementById('profileEmailView').textContent = currentUser.email;
+            
+            const avatarEl = document.getElementById('profileAvatarView');
+            if (userData.photoURL) {
+                avatarEl.innerHTML = '<img src="' + userData.photoURL + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+            } else {
+                avatarEl.textContent = displayName.charAt(0).toUpperCase();
+            }
+            
+            let fieldsHtml = '';
+            if (userData.realName) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
+            if (userData.nickname) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
+            if (userData.publicEmail) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">公開用メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
+            if (userData.phone) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">電話番号</div><div class="profile-field-value">' + userData.phone + '</div></div>';
+            if (userData.lineId) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">LINE</div><div class="profile-field-value">' + userData.lineId + '</div></div>';
+            if (userData.instagram) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">Instagram</div><div class="profile-field-value">' + userData.instagram + '</div></div>';
+            if (userData.threads) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">Threads</div><div class="profile-field-value">' + userData.threads + '</div></div>';
+            if (userData.facebook) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">Facebook</div><div class="profile-field-value">' + userData.facebook + '</div></div>';
+            if (userData.twitter) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">X</div><div class="profile-field-value">' + userData.twitter + '</div></div>';
+            if (userData.linkedin) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">LinkedIn</div><div class="profile-field-value">' + userData.linkedin + '</div></div>';
+            if (userData.company) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
+            if (userData.bio) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
+            
+            if (userData.businessCardFront || userData.businessCardBack) {
+                fieldsHtml += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-images">';
+                if (userData.businessCardFront) fieldsHtml += '<img src="' + userData.businessCardFront + '" class="profile-image-preview">';
+                if (userData.businessCardBack) fieldsHtml += '<img src="' + userData.businessCardBack + '" class="profile-image-preview">';
+                fieldsHtml += '</div></div>';
+            }
+            
+            document.getElementById('profileFieldsView').innerHTML = fieldsHtml;
+        }
+        
+        function loadProfileForEdit() {
+            db.collection('users').doc(currentUser.uid).get().then(function(userDoc) {
+                const userData = userDoc.data();
+                if (userData) {
                     document.getElementById('profileRealName').value = userData.realName || '';
                     document.getElementById('profileNickname').value = userData.nickname || '';
                     document.getElementById('profilePublicEmail').value = userData.publicEmail || '';
@@ -1266,7 +1336,6 @@
                         uploadedCardBackURL = userData.businessCardBack;
                     }
                 }
-                generateUserQRCode();
             });
         }
         
@@ -1367,6 +1436,12 @@
                 return db.collection('users').doc(currentUser.uid).update(profileData);
             }).then(function() {
                 updateUserDisplay();
+                return db.collection('users').doc(currentUser.uid).get();
+            }).then(function(doc) {
+                renderProfileView(doc.data());
+                document.getElementById('profileViewMode').classList.remove('hidden');
+                document.getElementById('profileEditMode').classList.add('hidden');
+                document.getElementById('editProfileBtn').textContent = '✏️ 編集';
                 alert('プロフィールを更新しました!');
             }).catch(function(error) {
                 alert('エラーが発生しました: ' + error.message);
