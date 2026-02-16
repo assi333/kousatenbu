@@ -1467,49 +1467,56 @@
 }
         
         function updateProfile() {
-            const realName = document.getElementById('profileRealName').value;
-            const nickname = document.getElementById('profileNickname').value;
-            
-            if (!realName && !nickname) {
-                alert('氏名またはニックネームのどちらかを入力してください');
-                return;
-            }
-            
-            const displayName = realName || nickname;
-            const profileData = {
-                displayName: displayName,
-                realName: realName,
-                nickname: nickname,
-                photoURL: uploadedPhotoURL || '',
-                publicEmail: document.getElementById('profilePublicEmail').value,
-                phone: document.getElementById('profilePhone').value,
-                lineId: document.getElementById('profileLine').value,
-                instagram: document.getElementById('profileInstagram').value,
-                threads: document.getElementById('profileThreads').value,
-                facebook: document.getElementById('profileFacebook').value,
-                twitter: document.getElementById('profileTwitter').value,
-                linkedin: document.getElementById('profileLinkedin').value,
-                company: document.getElementById('profileCompany').value,
-                businessCardFront: uploadedCardFrontURL || '',
-                businessCardBack: uploadedCardBackURL || '',
-                bio: document.getElementById('profileBio').value
-            };
-            
-            currentUser.updateProfile({ displayName: displayName }).then(function() {
-                return db.collection('users').doc(currentUser.uid).update(profileData);
-            }).then(function() {
-                updateUserDisplay();
-                return db.collection('users').doc(currentUser.uid).get();
-            }).then(function(doc) {
-                renderProfileView(doc.data());
-                document.getElementById('profileViewMode').classList.remove('hidden');
-                document.getElementById('profileEditMode').classList.add('hidden');
-                document.getElementById('editProfileBtn').textContent = '✏️ 編集';
-                alert('プロフィールを更新しました!');
-            }).catch(function(error) {
-                alert('エラーが発生しました: ' + error.message);
-            });
-        }
+    const realName = document.getElementById('profileRealName').value;
+    const nickname = document.getElementById('profileNickname').value;
+    
+    if (!realName && !nickname) {
+        alert('氏名またはニックネームのどちらかを入力してください');
+        return;
+    }
+    
+    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+        const currentData = doc.data();
+        const displayName = realName || nickname;
+        
+        const profileData = {
+            displayName: displayName,
+            realName: realName,
+            nickname: nickname,
+            photoURL: uploadedPhotoURL || currentData.photoURL || '',
+            publicEmail: document.getElementById('profilePublicEmail').value,
+            phone: document.getElementById('profilePhone').value,
+            lineId: document.getElementById('profileLine').value,
+            instagram: document.getElementById('profileInstagram').value,
+            threads: document.getElementById('profileThreads').value,
+            facebook: document.getElementById('profileFacebook').value,
+            twitter: document.getElementById('profileTwitter').value,
+            linkedin: document.getElementById('profileLinkedin').value,
+            company: document.getElementById('profileCompany').value,
+            businessCardFront: uploadedCardFrontURL || currentData.businessCardFront || '',
+            businessCardBack: uploadedCardBackURL || currentData.businessCardBack || '',
+            bio: document.getElementById('profileBio').value
+        };
+        
+        return currentUser.updateProfile({ displayName: displayName }).then(function() {
+            return db.collection('users').doc(currentUser.uid).update(profileData);
+        });
+    }).then(function() {
+        uploadedPhotoURL = null;
+        uploadedCardFrontURL = null;
+        uploadedCardBackURL = null;
+        updateUserDisplay();
+        return db.collection('users').doc(currentUser.uid).get();
+    }).then(function(doc) {
+        renderProfileView(doc.data());
+        document.getElementById('profileViewMode').classList.remove('hidden');
+        document.getElementById('profileEditMode').classList.add('hidden');
+        document.getElementById('editProfileBtn').textContent = '✏️ 編集';
+        alert('プロフィールを更新しました!');
+    }).catch(function(error) {
+        alert('エラーが発生しました: ' + error.message);
+    });
+}
         
         function formatDate(date) {
             const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', weekday: 'short' };
