@@ -502,19 +502,22 @@
             word-break: break-word;
         }
         
-        .profile-images {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
+        .business-card-link {
+            color: #00d9ff;
+            text-decoration: underline;
+            cursor: pointer;
+            transition: all 0.3s;
         }
         
-        .profile-image-preview {
-            width: 100%;
-            height: 150px;
+        .business-card-link:hover {
+            color: #7000ff;
+        }
+        
+        .card-image-modal {
+            max-width: 90%;
+            max-height: 80vh;
             border-radius: 12px;
-            object-fit: cover;
-            border: 1px solid rgba(0, 217, 255, 0.2);
+            object-fit: contain;
         }
         
         .section-title {
@@ -829,6 +832,16 @@
             <div id="userProfileContent"></div>
         </div>
     </div>
+    
+    <div id="cardImageModal" class="modal">
+        <div class="modal-content" style="max-width: 90%; background: transparent; border: none;">
+            <div class="modal-header">
+                <h2 class="modal-title">名刺</h2>
+                <button class="close-btn" onclick="closeModal('cardImageModal')">&times;</button>
+            </div>
+            <img id="cardImageView" class="card-image-modal" src="" alt="名刺">
+        </div>
+    </div>
 
     <script>
         const firebaseConfig = {
@@ -904,7 +917,6 @@
                     avatarEl.innerHTML = '<img src="' + userData.photoURL + '" alt="avatar">';
                 } else {
                     const initial = displayName.charAt(0).toUpperCase();
-                    avatarEl.textContent = initial;
                     avatarEl.innerHTML = initial;
                 }
             });
@@ -996,6 +1008,11 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
             document.getElementById('myQRModal').classList.add('active');
+        }
+        
+        function showCardImage(imageUrl) {
+            document.getElementById('cardImageView').src = imageUrl;
+            document.getElementById('cardImageModal').classList.add('active');
         }
         
         function toggleProfileEdit() {
@@ -1277,9 +1294,9 @@
                 if (userData.bio) content += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
                 
                 if (userData.businessCardFront || userData.businessCardBack) {
-                    content += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-images">';
-                    if (userData.businessCardFront) content += '<img src="' + userData.businessCardFront + '" class="profile-image-preview">';
-                    if (userData.businessCardBack) content += '<img src="' + userData.businessCardBack + '" class="profile-image-preview">';
+                    content += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
+                    if (userData.businessCardFront) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span> ';
+                    if (userData.businessCardBack) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
                     content += '</div></div>';
                 }
                 
@@ -1308,7 +1325,7 @@
             if (userData.photoURL) {
                 avatarEl.innerHTML = '<img src="' + userData.photoURL + '" alt="avatar">';
             } else {
-                avatarEl.textContent = displayName.charAt(0).toUpperCase();
+                avatarEl.innerHTML = displayName.charAt(0).toUpperCase();
             }
             
             let fieldsHtml = '';
@@ -1326,9 +1343,9 @@
             if (userData.bio) fieldsHtml += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
             
             if (userData.businessCardFront || userData.businessCardBack) {
-                fieldsHtml += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-images">';
-                if (userData.businessCardFront) fieldsHtml += '<img src="' + userData.businessCardFront + '" class="profile-image-preview">';
-                if (userData.businessCardBack) fieldsHtml += '<img src="' + userData.businessCardBack + '" class="profile-image-preview">';
+                fieldsHtml += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
+                if (userData.businessCardFront) fieldsHtml += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span> ';
+                if (userData.businessCardBack) fieldsHtml += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
                 fieldsHtml += '</div></div>';
             }
             
