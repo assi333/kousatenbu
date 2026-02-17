@@ -507,6 +507,7 @@
             text-decoration: underline;
             cursor: pointer;
             transition: all 0.3s;
+            margin-right: 10px;
         }
         
         .business-card-link:hover {
@@ -527,6 +528,12 @@
             margin: 25px 0 15px 0;
             padding-bottom: 10px;
             border-bottom: 2px solid rgba(0, 217, 255, 0.2);
+        }
+        
+        .upload-status {
+            font-size: 13px;
+            color: #00ff88;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -659,6 +666,7 @@
                             <div class="file-upload-area" onclick="document.getElementById('profilePhotoInput').click()">
                                 <input type="file" id="profilePhotoInput" accept="image/*" onchange="handlePhotoUpload(event)">
                                 <p>📷 クリックして写真を選択</p>
+                                <p id="photoStatus" class="upload-status" style="display:none;"></p>
                                 <img id="photoPreview" style="max-width: 200px; margin-top: 10px; display: none; border-radius: 12px;">
                             </div>
                         </div>
@@ -709,6 +717,7 @@
                             <div class="file-upload-area" onclick="document.getElementById('businessCardFrontInput').click()">
                                 <input type="file" id="businessCardFrontInput" accept="image/*" onchange="handleCardFrontUpload(event)">
                                 <p>🎴 クリックして名刺（表）を選択</p>
+                                <p id="cardFrontStatus" class="upload-status" style="display:none;"></p>
                                 <img id="cardFrontPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
                             </div>
                         </div>
@@ -717,6 +726,7 @@
                             <div class="file-upload-area" onclick="document.getElementById('businessCardBackInput').click()">
                                 <input type="file" id="businessCardBackInput" accept="image/*" onchange="handleCardBackUpload(event)">
                                 <p>🎴 クリックして名刺（裏）を選択</p>
+                                <p id="cardBackStatus" class="upload-status" style="display:none;"></p>
                                 <img id="cardBackPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
                             </div>
                         </div>
@@ -727,7 +737,7 @@
                         
                         <div class="btn-group">
                             <button class="btn btn-secondary" onclick="cancelProfileEdit()">キャンセル</button>
-                            <button class="btn btn-primary" onclick="updateProfile()">保存</button>
+                            <button class="btn btn-primary" id="saveProfileBtn" onclick="updateProfile()">保存</button>
                         </div>
                     </div>
                 </div>
@@ -860,9 +870,13 @@
         let currentUser = null;
         let eventsListener = null;
         let myEventsListener = null;
-        let uploadedPhotoURL = null;
-        let uploadedCardFrontURL = null;
-        let uploadedCardBackURL = null;
+        
+        var profilePhotoURL = null;
+        var cardFrontURL = null;
+        var cardBackURL = null;
+        var isPhotoUploading = false;
+        var isCardFrontUploading = false;
+        var isCardBackUploading = false;
         
         auth.onAuthStateChanged(function(user) {
             if (user) {
@@ -886,7 +900,7 @@
                         displayName: currentUser.displayName || '',
                         realName: '',
                         nickname: currentUser.displayName || '',
-                        photoURL: currentUser.photoURL || '',
+                        photoURL: '',
                         publicEmail: '',
                         phone: '',
                         lineId: '',
@@ -1024,6 +1038,9 @@
                 viewMode.classList.remove('hidden');
                 editMode.classList.add('hidden');
                 btn.textContent = '✏️ 編集';
+                profilePhotoURL = null;
+                cardFrontURL = null;
+                cardBackURL = null;
             } else {
                 viewMode.classList.add('hidden');
                 editMode.classList.remove('hidden');
@@ -1036,6 +1053,174 @@
             document.getElementById('profileViewMode').classList.remove('hidden');
             document.getElementById('profileEditMode').classList.add('hidden');
             document.getElementById('editProfileBtn').textContent = '✏️ 編集';
+            profilePhotoURL = null;
+            cardFrontURL = null;
+            cardBackURL = null;
+        }
+        
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            isPhotoUploading = true;
+            document.getElementById('photoStatus').textContent = 'アップロード中...';
+            document.getElementById('photoStatus').style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('photoPreview').src = e.target.result;
+                document.getElementById('photoPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('profile-photos/' + currentUser.uid + '/' + Date.now() + '-' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                profilePhotoURL = url;
+                isPhotoUploading = false;
+                document.getElementById('photoStatus').textContent = '✓ アップロード完了';
+                console.log('Photo uploaded:', url);
+            }).catch(function(error) {
+                isPhotoUploading = false;
+                document.getElementById('photoStatus').textContent = 'エラー: ' + error.message;
+                alert('顔写真のアップロードエラー: ' + error.message);
+            });
+        }
+        
+        function handleCardFrontUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            isCardFrontUploading = true;
+            document.getElementById('cardFrontStatus').textContent = 'アップロード中...';
+            document.getElementById('cardFrontStatus').style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('cardFrontPreview').src = e.target.result;
+                document.getElementById('cardFrontPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('business-cards/' + currentUser.uid + '/front-' + Date.now() + '-' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                cardFrontURL = url;
+                isCardFrontUploading = false;
+                document.getElementById('cardFrontStatus').textContent = '✓ アップロード完了';
+                console.log('Card front uploaded:', url);
+            }).catch(function(error) {
+                isCardFrontUploading = false;
+                document.getElementById('cardFrontStatus').textContent = 'エラー: ' + error.message;
+                alert('名刺（表）のアップロードエラー: ' + error.message);
+            });
+        }
+        
+        function handleCardBackUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            isCardBackUploading = true;
+            document.getElementById('cardBackStatus').textContent = 'アップロード中...';
+            document.getElementById('cardBackStatus').style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('cardBackPreview').src = e.target.result;
+                document.getElementById('cardBackPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('business-cards/' + currentUser.uid + '/back-' + Date.now() + '-' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                cardBackURL = url;
+                isCardBackUploading = false;
+                document.getElementById('cardBackStatus').textContent = '✓ アップロード完了';
+                console.log('Card back uploaded:', url);
+            }).catch(function(error) {
+                isCardBackUploading = false;
+                document.getElementById('cardBackStatus').textContent = 'エラー: ' + error.message;
+                alert('名刺（裏）のアップロードエラー: ' + error.message);
+            });
+        }
+        
+        function updateProfile() {
+            if (isPhotoUploading || isCardFrontUploading || isCardBackUploading) {
+                alert('画像のアップロード中です。完了までお待ちください。');
+                return;
+            }
+            
+            const realName = document.getElementById('profileRealName').value;
+            const nickname = document.getElementById('profileNickname').value;
+            
+            if (!realName && !nickname) {
+                alert('氏名またはニックネームのどちらかを入力してください');
+                return;
+            }
+            
+            document.getElementById('saveProfileBtn').disabled = true;
+            document.getElementById('saveProfileBtn').textContent = '保存中...';
+            
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const currentData = doc.data();
+                const displayName = realName || nickname;
+                
+                const newPhotoURL = profilePhotoURL !== null ? profilePhotoURL : currentData.photoURL;
+                const newCardFront = cardFrontURL !== null ? cardFrontURL : currentData.businessCardFront;
+                const newCardBack = cardBackURL !== null ? cardBackURL : currentData.businessCardBack;
+                
+                console.log('Saving profile with:', {
+                    photoURL: newPhotoURL,
+                    cardFront: newCardFront,
+                    cardBack: newCardBack
+                });
+                
+                const profileData = {
+                    displayName: displayName,
+                    realName: realName,
+                    nickname: nickname,
+                    photoURL: newPhotoURL || '',
+                    publicEmail: document.getElementById('profilePublicEmail').value,
+                    phone: document.getElementById('profilePhone').value,
+                    lineId: document.getElementById('profileLine').value,
+                    instagram: document.getElementById('profileInstagram').value,
+                    threads: document.getElementById('profileThreads').value,
+                    facebook: document.getElementById('profileFacebook').value,
+                    twitter: document.getElementById('profileTwitter').value,
+                    linkedin: document.getElementById('profileLinkedin').value,
+                    company: document.getElementById('profileCompany').value,
+                    businessCardFront: newCardFront || '',
+                    businessCardBack: newCardBack || '',
+                    bio: document.getElementById('profileBio').value
+                };
+                
+                return currentUser.updateProfile({ displayName: displayName }).then(function() {
+                    return db.collection('users').doc(currentUser.uid).update(profileData);
+                });
+            }).then(function() {
+                profilePhotoURL = null;
+                cardFrontURL = null;
+                cardBackURL = null;
+                updateUserDisplay();
+                return db.collection('users').doc(currentUser.uid).get();
+            }).then(function(doc) {
+                renderProfileView(doc.data());
+                document.getElementById('profileViewMode').classList.remove('hidden');
+                document.getElementById('profileEditMode').classList.add('hidden');
+                document.getElementById('editProfileBtn').textContent = '✏️ 編集';
+                document.getElementById('saveProfileBtn').disabled = false;
+                document.getElementById('saveProfileBtn').textContent = '保存';
+                alert('プロフィールを更新しました!');
+            }).catch(function(error) {
+                document.getElementById('saveProfileBtn').disabled = false;
+                document.getElementById('saveProfileBtn').textContent = '保存';
+                alert('エラーが発生しました: ' + error.message);
+                console.error('Profile update error:', error);
+            });
         }
         
         function showCreateEventModal() {
@@ -1295,7 +1480,7 @@
                 
                 if (userData.businessCardFront || userData.businessCardBack) {
                     content += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
-                    if (userData.businessCardFront) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span> ';
+                    if (userData.businessCardFront) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
                     if (userData.businessCardBack) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
                     content += '</div></div>';
                 }
@@ -1344,7 +1529,7 @@
             
             if (userData.businessCardFront || userData.businessCardBack) {
                 fieldsHtml += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
-                if (userData.businessCardFront) fieldsHtml += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span> ';
+                if (userData.businessCardFront) fieldsHtml += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
                 if (userData.businessCardBack) fieldsHtml += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
                 fieldsHtml += '</div></div>';
             }
@@ -1369,21 +1554,31 @@
                     document.getElementById('profileCompany').value = userData.company || '';
                     document.getElementById('profileBio').value = userData.bio || '';
                     
-                    uploadedPhotoURL = userData.photoURL || null;
-                    uploadedCardFrontURL = userData.businessCardFront || null;
-                    uploadedCardBackURL = userData.businessCardBack || null;
+                    profilePhotoURL = null;
+                    cardFrontURL = null;
+                    cardBackURL = null;
+                    
+                    document.getElementById('photoStatus').style.display = 'none';
+                    document.getElementById('cardFrontStatus').style.display = 'none';
+                    document.getElementById('cardBackStatus').style.display = 'none';
                     
                     if (userData.photoURL) {
                         document.getElementById('photoPreview').src = userData.photoURL;
                         document.getElementById('photoPreview').style.display = 'block';
+                    } else {
+                        document.getElementById('photoPreview').style.display = 'none';
                     }
                     if (userData.businessCardFront) {
                         document.getElementById('cardFrontPreview').src = userData.businessCardFront;
                         document.getElementById('cardFrontPreview').style.display = 'block';
+                    } else {
+                        document.getElementById('cardFrontPreview').style.display = 'none';
                     }
                     if (userData.businessCardBack) {
                         document.getElementById('cardBackPreview').src = userData.businessCardBack;
                         document.getElementById('cardBackPreview').style.display = 'block';
+                    } else {
+                        document.getElementById('cardBackPreview').style.display = 'none';
                     }
                 }
             });
@@ -1398,125 +1593,6 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
         }
-        
-        function handlePhotoUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    alert('画像をアップロード中です。完了までお待ちください...');
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        document.getElementById('photoPreview').src = e.target.result;
-        document.getElementById('photoPreview').style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-    
-    const storageRef = storage.ref('profile-photos/' + currentUser.uid + '/' + Date.now() + '-' + file.name);
-    storageRef.put(file).then(function(snapshot) {
-        return snapshot.ref.getDownloadURL();
-    }).then(function(url) {
-        uploadedPhotoURL = url;
-        alert('顔写真のアップロードが完了しました！「保存」ボタンを押してください。');
-    }).catch(function(error) {
-        alert('アップロードエラー: ' + error.message);
-    });
-}
-        
-
-        function handleCardFrontUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('cardFrontPreview').src = e.target.result;
-                document.getElementById('cardFrontPreview').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-            
-            const storageRef = storage.ref('business-cards/' + currentUser.uid + '/front-' + Date.now() + '-' + file.name);
-            storageRef.put(file).then(function(snapshot) {
-                return snapshot.ref.getDownloadURL();
-            }).then(function(url) {
-                uploadedCardFrontURL = url;
-            });
-        }
-        
-        function handleCardBackUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    alert('名刺（裏）をアップロード中です。完了までお待ちください...');
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        document.getElementById('cardBackPreview').src = e.target.result;
-        document.getElementById('cardBackPreview').style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-    
-    const storageRef = storage.ref('business-cards/' + currentUser.uid + '/back-' + Date.now() + '-' + file.name);
-    storageRef.put(file).then(function(snapshot) {
-        return snapshot.ref.getDownloadURL();
-    }).then(function(url) {
-        uploadedCardBackURL = url;
-        alert('名刺（裏）のアップロードが完了しました！「保存」ボタンを押してください。');
-    }).catch(function(error) {
-        alert('アップロードエラー: ' + error.message);
-    });
-}
-        
-        function updateProfile() {
-    const realName = document.getElementById('profileRealName').value;
-    const nickname = document.getElementById('profileNickname').value;
-    
-    if (!realName && !nickname) {
-        alert('氏名またはニックネームのどちらかを入力してください');
-        return;
-    }
-    
-    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
-        const currentData = doc.data();
-        const displayName = realName || nickname;
-        
-        const profileData = {
-            displayName: displayName,
-            realName: realName,
-            nickname: nickname,
-            photoURL: uploadedPhotoURL || currentData.photoURL || '',
-            publicEmail: document.getElementById('profilePublicEmail').value,
-            phone: document.getElementById('profilePhone').value,
-            lineId: document.getElementById('profileLine').value,
-            instagram: document.getElementById('profileInstagram').value,
-            threads: document.getElementById('profileThreads').value,
-            facebook: document.getElementById('profileFacebook').value,
-            twitter: document.getElementById('profileTwitter').value,
-            linkedin: document.getElementById('profileLinkedin').value,
-            company: document.getElementById('profileCompany').value,
-            businessCardFront: uploadedCardFrontURL || currentData.businessCardFront || '',
-            businessCardBack: uploadedCardBackURL || currentData.businessCardBack || '',
-            bio: document.getElementById('profileBio').value
-        };
-        
-        return currentUser.updateProfile({ displayName: displayName }).then(function() {
-            return db.collection('users').doc(currentUser.uid).update(profileData);
-        });
-    }).then(function() {
-        uploadedPhotoURL = null;
-        uploadedCardFrontURL = null;
-        uploadedCardBackURL = null;
-        updateUserDisplay();
-        return db.collection('users').doc(currentUser.uid).get();
-    }).then(function(doc) {
-        renderProfileView(doc.data());
-        document.getElementById('profileViewMode').classList.remove('hidden');
-        document.getElementById('profileEditMode').classList.add('hidden');
-        document.getElementById('editProfileBtn').textContent = '✏️ 編集';
-        alert('プロフィールを更新しました!');
-    }).catch(function(error) {
-        alert('エラーが発生しました: ' + error.message);
-    });
-}
         
         function formatDate(date) {
             const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', weekday: 'short' };
