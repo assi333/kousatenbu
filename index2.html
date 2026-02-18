@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交差点部 - イベント管理</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;700;900&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0, 217, 255, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(112, 0, 255, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; }
+        
+        header {
+            background: rgba(26, 35, 71, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d9ff, #7000ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d9ff, #7000ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            overflow: hidden;
+        }
+        
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .auth-container {
+            max-width: 450px;
+            margin: 80px auto;
+            background: rgba(26, 35, 71, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .auth-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #00d9ff, #7000ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #a0aec0;
+            font-size: 14px;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(10, 14, 39, 0.6);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #00d9ff;
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d9ff, #7000ff);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 217, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(26, 35, 71, 0.6);
+            color: white;
+            border: 1px solid rgba(0, 217, 255, 0.3);
+        }
+        
+        .btn-small { padding: 10px 16px; font-size: 13px; width: auto; }
+        
+        .text-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #a0aec0;
+            font-size: 14px;
+        }
+        
+        .text-link a {
+            color: #00d9ff;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: rgba(26, 35, 71, 0.5);
+            padding: 8px;
+            border-radius: 16px;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: #a0aec0;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, #00d9ff, #7000ff);
+            color: white;
+        }
+        
+        .section {
+            background: rgba(26, 35, 71, 0.7);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00d9ff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 217, 255, 0.2);
+        }
+        
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: rgba(10, 14, 39, 0.6);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 217, 255, 0.2);
+            border-color: #00d9ff;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        .card-date {
+            font-size: 13px;
+            color: #a0aec0;
+            margin-top: 5px;
+        }
+        
+        .card-stats {
+            display: flex;
+            gap: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
+            flex-wrap: wrap;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #a0aec0;
+            font-size: 13px;
+        }
+        
+        .stat-value {
+            color: #00d9ff;
+            font-weight: 700;
+        }
+        
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-today { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .badge-upcoming { background: rgba(255, 170, 0, 0.2); color: #ffaa00; }
+        .badge-ended { background: rgba(160, 174, 192, 0.2); color: #a0aec0; }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d9ff, #7000ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 40px;
+            overflow: hidden;
+        }
+        
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-field {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .profile-field:last-child {
+            border-bottom: none;
+        }
+        
+        .profile-field-label {
+            font-weight: 600;
+            color: #00d9ff;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .profile-field-value {
+            color: #cbd5e0;
+            word-break: break-word;
+        }
+        
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 217, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00d9ff;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .social-icon:hover {
+            background: rgba(0, 217, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .collapsible {
+            background: rgba(10, 14, 39, 0.4);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            cursor: pointer;
+        }
+        
+        .collapsible-header:hover {
+            background: rgba(0, 217, 255, 0.05);
+        }
+        
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .collapsible-content.open {
+            max-height: 1000px;
+        }
+        
+        .collapsible-body {
+            padding: 0 20px 20px 20px;
+        }
+        
+        .participant-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .participant-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: rgba(0, 217, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .participant-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d9ff, #7000ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            overflow: hidden;
+        }
+        
+        .participant-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .settings-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            background: rgba(10, 14, 39, 0.4);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .menu-item:hover {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: #00d9ff;
+        }
+        
+        .menu-item-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .menu-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(0, 217, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00d9ff;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.active { display: flex; }
+        
+        .modal-content {
+            background: #1a2347;
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+        
+        .modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: #a0aec0;
+            font-size: 28px;
+            cursor: pointer;
+        }
+        
+        .hidden { display: none !important; }
+        
+        .loading { text-align: center; padding: 60px 20px; color: #a0aec0; }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 217, 255, 0.2);
+            border-top-color: #00d9ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: #a0aec0; }
+        
+        .file-upload-area {
+            border: 2px dashed rgba(0, 217, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #00d9ff;
+            background: rgba(0, 217, 255, 0.05);
+        }
+        
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+        
+        .upload-status {
+            font-size: 13px;
+            color: #00ff88;
+            margin-top: 5px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-group .btn { flex: 1; }
+        
+        .btn-danger { background: #ff3366; color: white; }
+        
+        .btn-google {
+            background: white;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .business-card-link {
+            color: #00d9ff;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .card-image-modal {
+            max-width: 90%;
+            max-height: 80vh;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div id="authScreen" class="auth-container">
+        <h1 class="auth-title">交差点部</h1>
+        
+        <div id="loginForm">
+            <div class="form-group">
+                <label>メールアドレス</label>
+                <input type="email" id="loginEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>パスワード</label>
+                <input type="password" id="loginPassword" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" onclick="login()">ログイン</button>
+            <button class="btn btn-google" onclick="googleLogin()">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                    <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                    <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                </svg>
+                Googleでログイン
+            </button>
+            <div class="text-link">
+                アカウントをお持ちでない方は <a onclick="showSignup()">新規登録</a>
+            </div>
+        </div>
+        
+        <div id="signupForm" class="hidden">
+            <div class="form-group">
+                <label>ニックネーム または 氏名 <span style="color: #ff3366;">*</span></label>
+                <input type="text" id="signupName" placeholder="山田太郎 または ニックネーム">
+                <small style="color: #a0aec0; font-size: 12px;">どちらか必須です</small>
+            </div>
+            <div class="form-group">
+                <label>メールアドレス</label>
+                <input type="email" id="signupEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>パスワード</label>
+                <input type="password" id="signupPassword" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" onclick="signup()">新規登録</button>
+            <button class="btn btn-google" onclick="googleLogin()">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                    <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                    <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                </svg>
+                Googleで登録
+            </button>
+            <div class="text-link">
+                すでにアカウントをお持ちの方は <a onclick="showLogin()">ログイン</a>
+            </div>
+        </div>
+    </div>
+    
+    <div id="mainApp" class="hidden">
+        <div class="container">
+            <header>
+                <div class="logo">交差点部</div>
+                <div class="user-info">
+                    <span id="userName"></span>
+                    <div class="avatar" id="userAvatar"></div>
+                    <button class="btn btn-secondary btn-small" onclick="logout()">ログアウト</button>
+                </div>
+            </header>
+            
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('home')"><i class="fas fa-home"></i> ホーム</button>
+                <button class="nav-tab" onclick="showTab('mypage')"><i class="fas fa-user"></i> マイページ</button>
+                <button class="nav-tab" onclick="showTab('settings')"><i class="fas fa-cog"></i> 設定</button>
+            </div>
+            
+            <div id="homeTab">
+                <div id="todayEventsSection" class="section hidden">
+                    <h2 class="section-title">📅 本日の参加イベント</h2>
+                    <div id="todayEventsList"></div>
+                </div>
+                
+                <div class="section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 class="section-title" style="margin: 0; border: none; padding: 0;">🎉 イベント一覧</h2>
+                        <button class="btn btn-primary btn-small" onclick="showCreateEventModal()">✨ 作成</button>
+                    </div>
+                    <div id="allEventsList" class="cards-grid"></div>
+                </div>
+            </div>
+            
+            <div id="mypageTab" class="hidden">
+            </div>
+            
+            <div id="settingsTab" class="hidden">
+                <div class="section">
+                    <h2 class="section-title">⚙️ 設定</h2>
+                    <div class="settings-menu">
+                        <div class="menu-item" onclick="showTerms()">
+                            <div class="menu-item-left">
+                                <div class="menu-icon"><i class="fas fa-file-contract"></i></div>
+                                <span>利用規約</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #a0aec0;"></i>
+                        </div>
+                        <div class="menu-item" onclick="showGuide()">
+                            <div class="menu-item-left">
+                                <div class="menu-icon"><i class="fas fa-book"></i></div>
+                                <span>使い方ガイド</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #a0aec0;"></i>
+                        </div>
+                        <div class="menu-item" onclick="showNotifications()">
+                            <div class="menu-item-left">
+                                <div class="menu-icon"><i class="fas fa-bell"></i></div>
+                                <span>お知らせ</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #a0aec0;"></i>
+                        </div>
+                        <div id="adminMenu" class="menu-item hidden" onclick="showAdmin()">
+                            <div class="menu-item-left">
+                                <div class="menu-icon"><i class="fas fa-shield-alt"></i></div>
+                                <span>管理</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #a0aec0;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<div id="createEventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">新しいイベント作成</h2>
+                <button class="close-btn" onclick="closeModal('createEventModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>イベント名</label>
+                <input type="text" id="eventTitle" placeholder="例: 春の交流会">
+            </div>
+            <div class="form-group">
+                <label>説明</label>
+                <textarea id="eventDescription" rows="4" placeholder="イベントの詳細を入力"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>開始日時</label>
+                    <input type="datetime-local" id="eventStartDate">
+                </div>
+                <div class="form-group">
+                    <label>終了日時</label>
+                    <input type="datetime-local" id="eventEndDate">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>場所</label>
+                <input type="text" id="eventLocation" placeholder="例: 渋谷カフェ">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>定員</label>
+                    <input type="number" id="eventCapacity" placeholder="例: 20" min="1">
+                </div>
+                <div class="form-group">
+                    <label>参加費（円）</label>
+                    <input type="number" id="eventFee" placeholder="例: 3000" min="0">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="createNewEvent()">イベントを作成</button>
+        </div>
+    </div>
+    
+    <div id="eventDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="detailEventTitle"></h2>
+                <button class="close-btn" onclick="closeModal('eventDetailModal')">&times;</button>
+            </div>
+            <div id="eventDetailContent"></div>
+        </div>
+    </div>
+    
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">プロフィール編集</h2>
+                <button class="close-btn" onclick="closeModal('editProfileModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>氏名（任意）</label>
+                <input type="text" id="profileRealName" placeholder="山田太郎">
+            </div>
+            <div class="form-group">
+                <label>ニックネーム（任意）</label>
+                <input type="text" id="profileNickname" placeholder="やまちゃん">
+                <small style="color: #a0aec0; font-size: 12px;">氏名またはニックネームのどちらか必須</small>
+            </div>
+            <div class="form-group">
+                <label>顔写真（任意）</label>
+                <div class="file-upload-area" onclick="document.getElementById('profilePhotoInput').click()">
+                    <input type="file" id="profilePhotoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+                    <p>📷 クリックして写真を選択</p>
+                    <p id="photoStatus" class="upload-status" style="display:none;"></p>
+                    <img id="photoPreview" style="max-width: 200px; margin-top: 10px; display: none; border-radius: 12px;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>公開用メールアドレス</label>
+                <input type="email" id="profilePublicEmail" placeholder="public@email.com">
+            </div>
+            <div class="form-group">
+                <label>電話番号</label>
+                <input type="tel" id="profilePhone" placeholder="090-1234-5678">
+            </div>
+            <div class="form-group">
+                <label>LINE ID</label>
+                <input type="text" id="profileLine" placeholder="your-line-id">
+            </div>
+            <div class="form-group">
+                <label>Instagram</label>
+                <input type="text" id="profileInstagram" placeholder="@username">
+            </div>
+            <div class="form-group">
+                <label>Threads</label>
+                <input type="text" id="profileThreads" placeholder="@username">
+            </div>
+            <div class="form-group">
+                <label>Facebook</label>
+                <input type="text" id="profileFacebook" placeholder="facebook.com/username">
+            </div>
+            <div class="form-group">
+                <label>X (Twitter)</label>
+                <input type="text" id="profileTwitter" placeholder="@username">
+            </div>
+            <div class="form-group">
+                <label>LinkedIn</label>
+                <input type="text" id="profileLinkedin" placeholder="linkedin.com/in/username">
+            </div>
+            <div class="form-group">
+                <label>会社・団体名</label>
+                <input type="text" id="profileCompany" placeholder="株式会社○○">
+            </div>
+            <div class="form-group">
+                <label>名刺画像（表）</label>
+                <div class="file-upload-area" onclick="document.getElementById('businessCardFrontInput').click()">
+                    <input type="file" id="businessCardFrontInput" accept="image/*" onchange="handleCardFrontUpload(event)">
+                    <p>🎴 クリックして名刺（表）を選択</p>
+                    <p id="cardFrontStatus" class="upload-status" style="display:none;"></p>
+                    <img id="cardFrontPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>名刺画像（裏）</label>
+                <div class="file-upload-area" onclick="document.getElementById('businessCardBackInput').click()">
+                    <input type="file" id="businessCardBackInput" accept="image/*" onchange="handleCardBackUpload(event)">
+                    <p>🎴 クリックして名刺（裏）を選択</p>
+                    <p id="cardBackStatus" class="upload-status" style="display:none;"></p>
+                    <img id="cardBackPreview" style="max-width: 300px; margin-top: 10px; display: none; border-radius: 12px;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>自己紹介・特技</label>
+                <textarea id="profileBio" rows="4" placeholder="自己紹介や特技を入力してください"></textarea>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal('editProfileModal')">キャンセル</button>
+                <button class="btn btn-primary" id="saveProfileBtn" onclick="updateProfile()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="userProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">プロフィール</h2>
+                <button class="close-btn" onclick="closeModal('userProfileModal')">&times;</button>
+            </div>
+            <div id="userProfileContent"></div>
+        </div>
+    </div>
+    
+    <div id="cardImageModal" class="modal">
+        <div class="modal-content" style="max-width: 90%; background: transparent; border: none;">
+            <div class="modal-header">
+                <h2 class="modal-title">名刺</h2>
+                <button class="close-btn" onclick="closeModal('cardImageModal')">&times;</button>
+            </div>
+            <img id="cardImageView" class="card-image-modal" src="" alt="名刺">
+        </div>
+    </div>
+    
+    <div id="contentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="contentModalTitle"></h2>
+                <button class="close-btn" onclick="closeModal('contentModal')">&times;</button>
+            </div>
+            <div id="contentModalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAm6EWV8ThTnt_0h8QsI4Qf9ibn8Zr-MrY",
+            authDomain: "kousatenbu-app.firebaseapp.com",
+            projectId: "kousatenbu-app",
+            storageBucket: "kousatenbu-app.firebasestorage.app",
+            messagingSenderId: "915458075211",
+            appId: "1:915458075211:web:b5d578f74c84f3e21f3bce"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        let currentUser = null;
+        let eventsListener = null;
+        
+        var profilePhotoURL = null;
+        var cardFrontURL = null;
+        var cardBackURL = null;
+        var isPhotoUploading = false;
+        var isCardFrontUploading = false;
+        var isCardBackUploading = false;
+        
+        const ADMIN_EMAIL = 'assi14iii@gmail.com';
+        
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                currentUser = user;
+                initializeUserProfile();
+                showMainApp();
+                loadHomeData();
+            } else {
+                currentUser = null;
+                showAuthScreen();
+            }
+        });
+        
+        function initializeUserProfile() {
+            const userRef = db.collection('users').doc(currentUser.uid);
+            userRef.get().then(function(doc) {
+                if (!doc.exists) {
+                    userRef.set({
+                        uid: currentUser.uid,
+                        email: currentUser.email,
+                        displayName: currentUser.displayName || '',
+                        realName: '',
+                        nickname: currentUser.displayName || '',
+                        photoURL: '',
+                        publicEmail: '',
+                        phone: '',
+                        lineId: '',
+                        instagram: '',
+                        threads: '',
+                        facebook: '',
+                        twitter: '',
+                        linkedin: '',
+                        company: '',
+                        businessCardFront: '',
+                        businessCardBack: '',
+                        bio: '',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                updateUserDisplay();
+                if (currentUser.email === ADMIN_EMAIL) {
+                    document.getElementById('adminMenu').classList.remove('hidden');
+                }
+            });
+        }
+        
+        function updateUserDisplay() {
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                const displayName = userData.realName || userData.nickname || 'ユーザー';
+                document.getElementById('userName').textContent = displayName;
+                
+                const avatarEl = document.getElementById('userAvatar');
+                if (userData.photoURL) {
+                    avatarEl.innerHTML = '<img src="' + userData.photoURL + '" alt="avatar">';
+                } else {
+                    const initial = displayName.charAt(0).toUpperCase();
+                    avatarEl.innerHTML = initial;
+                }
+            });
+        }
+        
+        function getUserDisplayName(userData) {
+            return userData.realName || userData.nickname || userData.displayName || 'ユーザー';
+        }
+        
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+        }
+        
+        function showSignup() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+        }
+        
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(function(error) { alert('ログインに失敗しました: ' + error.message); });
+        }
+        
+        function signup() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            if (!name || !email || !password) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(function(result) {
+                    return result.user.updateProfile({ displayName: name });
+                })
+                .catch(function(error) { alert('登録に失敗しました: ' + error.message); });
+        }
+        
+        function googleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .catch(function(error) { alert('Googleログインに失敗しました: ' + error.message); });
+        }
+        
+        function logout() {
+            if (confirm('ログアウトしますか?')) {
+                auth.signOut();
+            }
+        }
+        
+        function showAuthScreen() {
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+        
+        function showMainApp() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(function(btn) { btn.classList.remove('active'); });
+            event.target.closest('.nav-tab').classList.add('active');
+            document.getElementById('homeTab').classList.add('hidden');
+            document.getElementById('mypageTab').classList.add('hidden');
+            document.getElementById('settingsTab').classList.add('hidden');
+            
+            if (tab === 'home') {
+                document.getElementById('homeTab').classList.remove('hidden');
+                loadHomeData();
+            } else if (tab === 'mypage') {
+                document.getElementById('mypageTab').classList.remove('hidden');
+                loadMyPage();
+            } else if (tab === 'settings') {
+                document.getElementById('settingsTab').classList.remove('hidden');
+            }
+        }
+        
+        function loadHomeData() {
+            loadTodayEvents();
+            loadAllEvents();
+        }
+        
+        function loadTodayEvents() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            db.collection('events').get().then(function(snapshot) {
+                var todayEvents = [];
+                snapshot.forEach(function(doc) {
+                    const event = doc.data();
+                    const startDate = event.startDate.toDate();
+                    const endDate = event.endDate ? event.endDate.toDate() : null;
+                    
+                    const isParticipant = event.participants && event.participants.some(function(p) { 
+                        return p.userId === currentUser.uid; 
+                    });
+                    
+                    if (isParticipant && startDate <= today && (!endDate || endDate >= today)) {
+                        todayEvents.push({id: doc.id, data: event});
+                    }
+                });
+                
+                const section = document.getElementById('todayEventsSection');
+                const container = document.getElementById('todayEventsList');
+                
+                if (todayEvents.length === 0) {
+                    section.classList.add('hidden');
+                } else {
+                    section.classList.remove('hidden');
+                    let html = '<div class="cards-grid">';
+                    todayEvents.forEach(function(item) {
+                        html += renderEventCard(item.id, item.data, true);
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            });
+        }
+        
+        function loadAllEvents() {
+            const container = document.getElementById('allEventsList');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>読み込み中...</p></div>';
+            
+            if (eventsListener) eventsListener();
+            eventsListener = db.collection('events').orderBy('startDate', 'asc').onSnapshot(function(snapshot) {
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="empty-state"><p>イベントがまだありません</p></div>';
+                    return;
+                }
+                let html = '';
+                snapshot.forEach(function(doc) {
+                    html += renderEventCard(doc.id, doc.data(), false);
+                });
+                container.innerHTML = html;
+            });
+        }
+        
+        function renderEventCard(eventId, event, isToday) {
+            const eventDate = event.startDate.toDate();
+            const endDate = event.endDate ? event.endDate.toDate() : null;
+            const now = new Date();
+            const isOrganizer = event.organizerId === currentUser.uid;
+            const isParticipant = event.participants && event.participants.some(function(p) { 
+                return p.userId === currentUser.uid; 
+            });
+            
+            let status = 'upcoming', statusText = '開催予定';
+            if (endDate && endDate < now) { 
+                status = 'ended'; 
+                statusText = '終了'; 
+            } else if (eventDate.toDateString() === now.toDateString()) { 
+                status = 'today'; 
+                statusText = '本日開催'; 
+            }
+            
+            let html = '<div class="card" onclick="showEventDetail(\'' + eventId + '\')">';
+            html += '<div class="card-header"><div><div class="card-title">' + event.title + '</div>';
+            html += '<div class="card-date">📅 ' + formatDate(eventDate) + '</div>';
+            html += '<div class="card-date">📍 ' + event.location + '</div></div>';
+            html += '<span class="badge badge-' + status + '">' + statusText + '</span></div>';
+            html += '<div class="card-stats">';
+            html += '<div class="stat">👥 <span class="stat-value">' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '</span></div>';
+            html += '<div class="stat">💰 <span class="stat-value">' + (event.fee || 0) + '円</span></div>';
+            html += '</div></div>';
+            
+            return html;
+        }
+        
+        function loadMyPage() {
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                const displayName = getUserDisplayName(userData);
+                
+                let html = '<div class="section">';
+                html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">';
+                html += '<h2 class="section-title" style="margin: 0; border: none; padding: 0;">👤 プロフィール</h2>';
+                html += '<button class="btn btn-secondary btn-small" onclick="showEditProfile()">✏️ 編集</button>';
+                html += '</div>';
+                
+                html += '<div class="profile-header">';
+                html += '<div class="profile-avatar">';
+                if (userData.photoURL) {
+                    html += '<img src="' + userData.photoURL + '" alt="avatar">';
+                } else {
+                    html += displayName.charAt(0).toUpperCase();
+                }
+                html += '</div>';
+                html += '<div><h2>' + displayName + '</h2><p style="color: #a0aec0;">' + currentUser.email + '</p></div>';
+                html += '</div>';
+                
+                if (userData.realName) html += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
+                if (userData.nickname) html += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
+                if (userData.publicEmail) html += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
+                if (userData.phone) html += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
+                if (userData.company) html += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
+                if (userData.bio) html += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
+                
+                if (userData.lineId || userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin) {
+                    html += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
+                    if (userData.lineId) html += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
+                    if (userData.instagram) html += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
+                    if (userData.threads) html += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
+                    if (userData.facebook) html += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
+                    if (userData.twitter) html += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
+                    if (userData.linkedin) html += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
+                    html += '</div></div>';
+                }
+                
+                if (userData.businessCardFront || userData.businessCardBack) {
+                    html += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
+                    if (userData.businessCardFront) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
+                    if (userData.businessCardBack) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
+                    html += '</div></div>';
+                }
+                
+                html += '</div>';
+                
+                loadMyPageEvents().then(function(eventsHtml) {
+                    html += eventsHtml;
+                    document.getElementById('mypageTab').innerHTML = html;
+                });
+            });
+        }
+        
+        function loadMyPageEvents() {
+            return db.collection('events').get().then(function(snapshot) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                var todayHosting = [];
+                var upcomingParticipating = [];
+                
+                snapshot.forEach(function(doc) {
+                    const event = doc.data();
+                    const startDate = event.startDate.toDate();
+                    const endDate = event.endDate ? event.endDate.toDate() : null;
+                    
+                    const isOrganizer = event.organizerId === currentUser.uid;
+                    const isParticipant = event.participants && event.participants.some(function(p) { 
+                        return p.userId === currentUser.uid; 
+                    });
+                    
+                    if (isOrganizer && startDate.toDateString() === today.toDateString()) {
+                        todayHosting.push({id: doc.id, data: event});
+                    }
+                    
+                    if (isParticipant && startDate >= today) {
+                        upcomingParticipating.push({id: doc.id, data: event});
+                    }
+                });
+                
+                let html = '';
+                
+                if (todayHosting.length > 0) {
+                    html += '<div class="section">';
+                    html += '<h2 class="section-title">📋 本日の主催イベント</h2>';
+                    todayHosting.forEach(function(item) {
+                        html += '<div class="collapsible">';
+                        html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
+                        html += '<div><div style="font-weight: 700; margin-bottom: 5px;">' + item.data.title + '</div>';
+                        html += '<div style="font-size: 13px; color: #a0aec0;">📅 ' + formatDate(item.data.startDate.toDate()) + '</div></div>';
+                        html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
+                        html += '</div>';
+                        html += '<div class="collapsible-content">';
+                        html += '<div class="collapsible-body">';
+                        html += '<div class="participant-list">';
+                        if (item.data.participants && item.data.participants.length > 0) {
+                            item.data.participants.forEach(function(p) {
+                                html += '<div class="participant-item" onclick="showUserProfile(\'' + p.userId + '\')">';
+                                html += '<div class="participant-avatar">' + p.userName.charAt(0).toUpperCase() + '</div>';
+                                html += '<div>' + p.userName + '</div>';
+                                html += '</div>';
+                            });
+                        } else {
+                            html += '<div style="color: #a0aec0; text-align: center;">参加者がまだいません</div>';
+                        }
+                        html += '</div></div></div></div>';
+                    });
+                    html += '</div>';
+                }
+                
+                if (upcomingParticipating.length > 0) {
+                    html += '<div class="section">';
+                    html += '<h2 class="section-title">🎫 参加予定イベント</h2>';
+                    html += '<div class="cards-grid">';
+                    upcomingParticipating.forEach(function(item) {
+                        html += renderEventCard(item.id, item.data, false);
+                    });
+                    html += '</div></div>';
+                }
+                
+                return html;
+            });
+        }
+        
+        function toggleCollapsible(event) {
+            event.stopPropagation();
+            const header = event.currentTarget;
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('i');
+            
+            content.classList.toggle('open');
+            if (content.classList.contains('open')) {
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        function showEditProfile() {
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                document.getElementById('profileRealName').value = userData.realName || '';
+                document.getElementById('profileNickname').value = userData.nickname || '';
+                document.getElementById('profilePublicEmail').value = userData.publicEmail || '';
+                document.getElementById('profilePhone').value = userData.phone || '';
+                document.getElementById('profileLine').value = userData.lineId || '';
+                document.getElementById('profileInstagram').value = userData.instagram || '';
+                document.getElementById('profileThreads').value = userData.threads || '';
+                document.getElementById('profileFacebook').value = userData.facebook || '';
+                document.getElementById('profileTwitter').value = userData.twitter || '';
+                document.getElementById('profileLinkedin').value = userData.linkedin || '';
+                document.getElementById('profileCompany').value = userData.company || '';
+                document.getElementById('profileBio').value = userData.bio || '';
+                
+                profilePhotoURL = null;
+                cardFrontURL = null;
+                cardBackURL = null;
+                
+                document.getElementById('photoStatus').style.display = 'none';
+                document.getElementById('cardFrontStatus').style.display = 'none';
+                document.getElementById('cardBackStatus').style.display = 'none';
+                
+                if (userData.photoURL) {
+                    document.getElementById('photoPreview').src = userData.photoURL;
+                    document.getElementById('photoPreview').style.display = 'block';
+                } else {
+                    document.getElementById('photoPreview').style.display = 'none';
+                }
+                if (userData.businessCardFront) {
+                    document.getElementById('cardFrontPreview').src = userData.businessCardFront;
+                    document.getElementById('cardFrontPreview').style.display = 'block';
+                } else {
+                    document.getElementById('cardFrontPreview').style.display = 'none';
+                }
+                if (userData.businessCardBack) {
+                    document.getElementById('cardBackPreview').src = userData.businessCardBack;
+                    document.getElementById('cardBackPreview').style.display = 'block';
+                } else {
+                    document.getElementById('cardBackPreview').style.display = 'none';
+                }
+                
+                document.getElementById('editProfileModal').classList.add('active');
+            });
+        }
+        
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            isPhotoUploading = true;
+            document.getElementById('photoStatus').textContent = 'アップロード中...';
+            document.getElementById('photoStatus').style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('photoPreview').src = e.target.result;
+                document.getElementById('photoPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('profile-photos/' + currentUser.uid + '/' + Date.now() + '-' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                profilePhotoURL = url;
+                isPhotoUploading = false;
+                document.getElementById('photoStatus').textContent = '✓ アップロード完了';
+            }).catch(function(error) {
+                isPhotoUploading = false;
+                document.getElementById('photoStatus').textContent = 'エラー: ' + error.message;
+                alert('顔写真のアップロードエラー: ' + error.message);
+            });
+        }
+        
+        function handleCardFrontUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            isCardFrontUploading = true;
+            document.getElementById('cardFrontStatus').textContent = 'アップロード中...';
+            document.getElementById('cardFrontStatus').style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('cardFrontPreview').src = e.target.result;
+                document.getElementById('cardFrontPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('business-cards/' + currentUser.uid + '/front-' + Date.now() + '-' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                cardFrontURL = url;
+                isCardFrontUploading = false;
+                document.getElementById('cardFrontStatus').textContent = '✓ アップロード完了';
+            }).catch(function(error) {
+                isCardFrontUploading = false;
+                document.getElementById('cardFrontStatus').textContent = 'エラー: ' + error.message;
+                alert('名刺（表）のアップロードエラー: ' + error.message);
+            });
+        }
+        
+        function handleCardBackUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            isCardBackUploading = true;
+            document.getElementById('cardBackStatus').textContent = 'アップロード中...';
+            document.getElementById('cardBackStatus').style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('cardBackPreview').src = e.target.result;
+                document.getElementById('cardBackPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            const storageRef = storage.ref('business-cards/' + currentUser.uid + '/back-' + Date.now() + '-' + file.name);
+            storageRef.put(file).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+            }).then(function(url) {
+                cardBackURL = url;
+                isCardBackUploading = false;
+                document.getElementById('cardBackStatus').textContent = '✓ アップロード完了';
+            }).catch(function(error) {
+                isCardBackUploading = false;
+                document.getElementById('cardBackStatus').textContent = 'エラー: ' + error.message;
+                alert('名刺（裏）のアップロードエラー: ' + error.message);
+            });
+        }
+        
+        function updateProfile() {
+            if (isPhotoUploading || isCardFrontUploading || isCardBackUploading) {
+                alert('画像のアップロード中です。完了までお待ちください。');
+                return;
+            }
+            
+            const realName = document.getElementById('profileRealName').value;
+            const nickname = document.getElementById('profileNickname').value;
+            
+            if (!realName && !nickname) {
+                alert('氏名またはニックネームのどちらかを入力してください');
+                return;
+            }
+            
+            document.getElementById('saveProfileBtn').disabled = true;
+            document.getElementById('saveProfileBtn').textContent = '保存中...';
+            
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const currentData = doc.data();
+                const displayName = realName || nickname;
+                
+                const newPhotoURL = profilePhotoURL !== null ? profilePhotoURL : currentData.photoURL;
+                const newCardFront = cardFrontURL !== null ? cardFrontURL : currentData.businessCardFront;
+                const newCardBack = cardBackURL !== null ? cardBackURL : currentData.businessCardBack;
+                
+                const profileData = {
+                    displayName: displayName,
+                    realName: realName,
+                    nickname: nickname,
+                    photoURL: newPhotoURL || '',
+                    publicEmail: document.getElementById('profilePublicEmail').value,
+                    phone: document.getElementById('profilePhone').value,
+                    lineId: document.getElementById('profileLine').value,
+                    instagram: document.getElementById('profileInstagram').value,
+                    threads: document.getElementById('profileThreads').value,
+                    facebook: document.getElementById('profileFacebook').value,
+                    twitter: document.getElementById('profileTwitter').value,
+                    linkedin: document.getElementById('profileLinkedin').value,
+                    company: document.getElementById('profileCompany').value,
+                    businessCardFront: newCardFront || '',
+                    businessCardBack: newCardBack || '',
+                    bio: document.getElementById('profileBio').value
+                };
+                
+                return currentUser.updateProfile({ displayName: displayName }).then(function() {
+                    return db.collection('users').doc(currentUser.uid).update(profileData);
+                });
+            }).then(function() {
+                profilePhotoURL = null;
+                cardFrontURL = null;
+                cardBackURL = null;
+                updateUserDisplay();
+                closeModal('editProfileModal');
+                document.getElementById('saveProfileBtn').disabled = false;
+                document.getElementById('saveProfileBtn').textContent = '保存';
+                loadMyPage();
+                alert('プロフィールを更新しました!');
+            }).catch(function(error) {
+                document.getElementById('saveProfileBtn').disabled = false;
+                document.getElementById('saveProfileBtn').textContent = '保存';
+                alert('エラーが発生しました: ' + error.message);
+            });
+        }
+        
+        function showCreateEventModal() {
+            document.getElementById('createEventModal').classList.add('active');
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(19, 0, 0, 0);
+            document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
+            const later = new Date(tomorrow);
+            later.setHours(21, 0, 0, 0);
+            document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
+        }
+        
+        function createNewEvent() {
+            const title = document.getElementById('eventTitle').value;
+            const description = document.getElementById('eventDescription').value;
+            const startDate = document.getElementById('eventStartDate').value;
+            const endDate = document.getElementById('eventEndDate').value;
+            const location = document.getElementById('eventLocation').value;
+            const capacity = parseInt(document.getElementById('eventCapacity').value);
+            const fee = parseInt(document.getElementById('eventFee').value) || 0;
+            
+            if (!title || !description || !startDate || !endDate || !location || !capacity) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+            
+            db.collection('events').add({
+                title: title,
+                description: description,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+                location: location,
+                capacity: capacity,
+                fee: fee,
+                organizerId: currentUser.uid,
+                organizerName: currentUser.displayName,
+                participants: [],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function() {
+                closeModal('createEventModal');
+                clearEventForm();
+                alert('イベントを作成しました!');
+            }).catch(function(error) {
+                alert('エラーが発生しました: ' + error.message);
+            });
+        }
+        
+        function clearEventForm() {
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventDescription').value = '';
+            document.getElementById('eventStartDate').value = '';
+            document.getElementById('eventEndDate').value = '';
+            document.getElementById('eventLocation').value = '';
+            document.getElementById('eventCapacity').value = '';
+            document.getElementById('eventFee').value = '';
+        }
+        
+        function showEventDetail(eventId) {
+            db.collection('events').doc(eventId).get().then(function(doc) {
+                const event = doc.data();
+                const eventDate = event.startDate.toDate();
+                const endDate = event.endDate ? event.endDate.toDate() : null;
+                const isOrganizer = event.organizerId === currentUser.uid;
+                const isParticipant = event.participants && event.participants.some(function(p) { 
+                    return p.userId === currentUser.uid; 
+                });
+                
+                document.getElementById('detailEventTitle').textContent = event.title;
+                
+                let content = '<div style="margin-bottom: 20px;"><p style="color: #cbd5e0; margin-bottom: 15px;">' + event.description + '</p>';
+                content += '<div style="display: grid; gap: 10px;"><p><strong>📅 開始:</strong> ' + formatDate(eventDate) + '</p>';
+                if (endDate) content += '<p><strong>⏰ 終了:</strong> ' + formatDate(endDate) + '</p>';
+                content += '<p><strong>📍 場所:</strong> ' + event.location + '</p>';
+                content += '<p><strong>👥 定員:</strong> ' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '名</p>';
+                content += '<p><strong>💰 参加費:</strong> ' + (event.fee || 0) + '円</p>';
+                content += '<p><strong>👤 主催者:</strong> ' + event.organizerName + '</p></div></div>';
+                
+                content += '<div class="btn-group">';
+                if (!isOrganizer && !isParticipant) {
+                    content += '<button class="btn btn-primary" onclick="joinEvent(\'' + eventId + '\')">参加する</button>';
+                }
+                if (isParticipant && !isOrganizer) {
+                    content += '<button class="btn btn-danger" onclick="leaveEvent(\'' + eventId + '\')">キャンセル</button>';
+                }
+                if (isOrganizer) {
+                    content += '<button class="btn btn-danger" onclick="deleteEvent(\'' + eventId + '\')">削除</button>';
+                }
+                content += '</div>';
+                
+                document.getElementById('eventDetailContent').innerHTML = content;
+                document.getElementById('eventDetailModal').classList.add('active');
+            });
+        }
+        
+        function joinEvent(eventId) {
+            const eventRef = db.collection('events').doc(eventId);
+            eventRef.get().then(function(event) {
+                const eventData = event.data();
+                if (eventData.participants && eventData.participants.length >= eventData.capacity) {
+                    alert('定員に達しています');
+                    return;
+                }
+                return eventRef.update({
+                    participants: firebase.firestore.FieldValue.arrayUnion({
+                        userId: currentUser.uid,
+                        userName: currentUser.displayName,
+                        joinedAt: new Date()
+                    })
+                });
+            }).then(function() {
+                closeModal('eventDetailModal');
+                alert('イベントに参加しました!');
+                loadHomeData();
+            }).catch(function(error) {
+                alert('エラーが発生しました: ' + error.message);
+            });
+        }
+        
+        function leaveEvent(eventId) {
+            if (!confirm('参加をキャンセルしますか?')) return;
+            const eventRef = db.collection('events').doc(eventId);
+            eventRef.get().then(function(event) {
+                const eventData = event.data();
+                const participant = eventData.participants.find(function(p) { return p.userId === currentUser.uid; });
+                return eventRef.update({
+                    participants: firebase.firestore.FieldValue.arrayRemove(participant)
+                });
+            }).then(function() {
+                closeModal('eventDetailModal');
+                alert('参加をキャンセルしました');
+                loadHomeData();
+            }).catch(function(error) {
+                alert('エラーが発生しました: ' + error.message);
+            });
+        }
+        
+        function deleteEvent(eventId) {
+            if (!confirm('このイベントを削除しますか?')) return;
+            db.collection('events').doc(eventId).delete()
+                .then(function() { 
+                    closeModal('eventDetailModal');
+                    alert('イベントを削除しました'); 
+                })
+                .catch(function(error) { alert('エラーが発生しました: ' + error.message); });
+        }
+        
+        function showUserProfile(userId) {
+            db.collection('users').doc(userId).get().then(function(doc) {
+                if (!doc.exists) return;
+                const userData = doc.data();
+                const displayName = getUserDisplayName(userData);
+                
+                let content = '<div class="profile-header"><div class="profile-avatar">';
+                if (userData.photoURL) {
+                    content += '<img src="' + userData.photoURL + '" alt="avatar">';
+                } else {
+                    content += displayName.charAt(0).toUpperCase();
+                }
+                content += '</div><div><h2>' + displayName + '</h2></div></div>';
+                
+                if (userData.realName) content += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
+                if (userData.nickname) content += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
+                if (userData.publicEmail) content += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
+                if (userData.phone) content += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
+                if (userData.lineId) content += '<div class="profile-field"><div class="profile-field-label">LINE</div><div class="profile-field-value">' + userData.lineId + '</div></div>';
+                if (userData.company) content += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
+                if (userData.bio) content += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
+                
+                if (userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin) {
+                    content += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
+                    if (userData.lineId) content += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
+                    if (userData.instagram) content += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
+                    if (userData.threads) content += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
+                    if (userData.facebook) content += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
+                    if (userData.twitter) content += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
+                    if (userData.linkedin) content += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
+                    content += '</div></div>';
+                }
+                
+                if (userData.businessCardFront || userData.businessCardBack) {
+                    content += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
+                    if (userData.businessCardFront) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
+                    if (userData.businessCardBack) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
+                    content += '</div></div>';
+                }
+                
+                document.getElementById('userProfileContent').innerHTML = content;
+                document.getElementById('userProfileModal').classList.add('active');
+            });
+        }
+        
+        function showCardImage(imageUrl) {
+            document.getElementById('cardImageView').src = imageUrl;
+            document.getElementById('cardImageModal').classList.add('active');
+        }
+        
+        function showTerms() {
+            document.getElementById('contentModalTitle').textContent = '利用規約';
+            document.getElementById('contentModalBody').innerHTML = '<p>利用規約の内容がここに表示されます。</p>';
+            document.getElementById('contentModal').classList.add('active');
+        }
+        
+        function showGuide() {
+            document.getElementById('contentModalTitle').textContent = '使い方ガイド';
+            document.getElementById('contentModalBody').innerHTML = '<p>使い方ガイドの内容がここに表示されます。</p>';
+            document.getElementById('contentModal').classList.add('active');
+        }
+        
+        function showNotifications() {
+            document.getElementById('contentModalTitle').textContent = 'お知らせ';
+            document.getElementById('contentModalBody').innerHTML = '<p>お知らせの内容がここに表示されます。</p>';
+            document.getElementById('contentModal').classList.add('active');
+        }
+        
+        function showAdmin() {
+            document.getElementById('contentModalTitle').textContent = '管理画面';
+            document.getElementById('contentModalBody').innerHTML = '<p>管理機能は開発中です。</p>';
+            document.getElementById('contentModal').classList.add('active');
+        }
+        
+        function formatDate(date) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', weekday: 'short' };
+            return date.toLocaleDateString('ja-JP', options);
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    const modalId = modal.getAttribute('id');
+                    closeModal(modalId);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
