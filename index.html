@@ -1156,7 +1156,7 @@
             return html;
         }
         
-        function loadMyPage() {
+    function loadMyPage() {
     let html = '';
     
     html += '<div class="section">';
@@ -1170,23 +1170,23 @@
     html += '</div></div></div>';
     
     html += '<div class="section">';
-    html += '<div class="collapsible">';
-    html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
-    html += '<span style="font-weight: 700;">📅 本日参加のイベント</span>';
-    html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
+    html += '<h2 class="section-title">📅 本日参加のイベント</h2>';
+    html += '<div id="todayParticipatingEvents"></div>';
     html += '</div>';
-    html += '<div class="collapsible-content">';
-    html += '<div class="collapsible-body" id="todayParticipatingEvents"></div>';
-    html += '</div></div></div>';
+    
+    html += '<div class="section">';
+    html += '<h2 class="section-title">🎫 参加予定のイベント</h2>';
+    html += '<div id="upcomingParticipatingEvents"></div>';
+    html += '</div>';
     
     html += '<div class="section">';
     html += '<div class="collapsible">';
     html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
-    html += '<span style="font-weight: 700;">🎫 参加予定のイベント</span>';
+    html += '<span style="font-weight: 700;">✅ 参加済みイベント</span>';
     html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
     html += '</div>';
     html += '<div class="collapsible-content">';
-    html += '<div class="collapsible-body" id="upcomingParticipatingEvents"></div>';
+    html += '<div class="collapsible-body" id="pastParticipatingEvents"></div>';
     html += '</div></div></div>';
     
     document.getElementById('mypageTab').innerHTML = html;
@@ -1194,6 +1194,196 @@
     loadMyPageProfile();
     loadTodayParticipatingEvents();
     loadUpcomingParticipatingEvents();
+    loadPastParticipatingEvents();
+}
+
+function loadMyPageProfile() {
+    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+        const userData = doc.data();
+        const displayName = getUserDisplayName(userData);
+        
+        let html = '<div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">';
+        html += '<button class="btn btn-secondary btn-small" onclick="showEditProfile()">✏️ 編集</button>';
+        html += '</div>';
+        
+        html += '<div class="profile-header">';
+        html += '<div class="profile-avatar">';
+        if (userData.photoURL) {
+            html += '<img src="' + userData.photoURL + '" alt="avatar">';
+        } else {
+            html += displayName.charAt(0).toUpperCase();
+        }
+        html += '</div>';
+        html += '<div><h2>' + displayName + '</h2><p style="color: #a0aec0;">' + currentUser.email + '</p></div>';
+        html += '</div>';
+        
+        if (userData.realName) html += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
+        if (userData.nickname) html += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
+        if (userData.publicEmail) html += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
+        if (userData.phone) html += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
+        if (userData.company) html += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
+        if (userData.bio) html += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
+        
+        if (userData.lineId || userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin) {
+            html += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
+            if (userData.lineId) html += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
+            if (userData.instagram) html += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
+            if (userData.threads) html += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
+            if (userData.facebook) html += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
+            if (userData.twitter) html += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
+            if (userData.linkedin) html += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
+            html += '</div></div>';
+        }
+        
+        if (userData.businessCardFront || userData.businessCardBack) {
+            html += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
+            if (userData.businessCardFront) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
+            if (userData.businessCardBack) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
+            html += '</div></div>';
+        }
+        
+        document.getElementById('profileContent').innerHTML = html;
+    });
+}
+
+function loadTodayParticipatingEvents() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    db.collection('events').get().then(function(snapshot) {
+        var todayEvents = [];
+        snapshot.forEach(function(doc) {
+            const event = doc.data();
+            const startDate = event.startDate.toDate();
+            startDate.setHours(0, 0, 0, 0);
+            const endDate = event.endDate ? event.endDate.toDate() : null;
+            
+            const isParticipant = event.participants && event.participants.some(function(p) { 
+                return p.userId === currentUser.uid; 
+            });
+            
+            if (isParticipant && startDate <= today) {
+                if (!endDate) {
+                    if (startDate.getTime() === today.getTime()) {
+                        todayEvents.push({id: doc.id, data: event});
+                    }
+                } else {
+                    const endDateNextDay = new Date(endDate);
+                    endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+                    endDateNextDay.setHours(0, 0, 0, 0);
+                    if (today < endDateNextDay) {
+                        todayEvents.push({id: doc.id, data: event});
+                    }
+                }
+            }
+        });
+        
+        const container = document.getElementById('todayParticipatingEvents');
+        
+        if (todayEvents.length === 0) {
+            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
+        } else {
+            let html = '<div class="cards-grid">';
+            todayEvents.forEach(function(item) {
+                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
+                html += '<div class="card-title">' + item.data.title + '</div>';
+                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    });
+}
+
+function loadUpcomingParticipatingEvents() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    db.collection('events').get().then(function(snapshot) {
+        var upcomingEvents = [];
+        snapshot.forEach(function(doc) {
+            const event = doc.data();
+            const startDate = event.startDate.toDate();
+            startDate.setHours(0, 0, 0, 0);
+            
+            const isParticipant = event.participants && event.participants.some(function(p) { 
+                return p.userId === currentUser.uid; 
+            });
+            
+            if (isParticipant && startDate > today) {
+                upcomingEvents.push({id: doc.id, data: event});
+            }
+        });
+        
+        upcomingEvents.sort(function(a, b) {
+            return a.data.startDate.toDate() - b.data.startDate.toDate();
+        });
+        
+        const container = document.getElementById('upcomingParticipatingEvents');
+        
+        if (upcomingEvents.length === 0) {
+            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
+        } else {
+            let html = '<div class="cards-grid">';
+            upcomingEvents.forEach(function(item) {
+                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
+                html += '<div class="card-title">' + item.data.title + '</div>';
+                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    });
+}
+
+function loadPastParticipatingEvents() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    db.collection('events').get().then(function(snapshot) {
+        var pastEvents = [];
+        snapshot.forEach(function(doc) {
+            const event = doc.data();
+            const endDate = event.endDate ? event.endDate.toDate() : event.startDate.toDate();
+            const endDateNextDay = new Date(endDate);
+            endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+            endDateNextDay.setHours(0, 0, 0, 0);
+            
+            const isParticipant = event.participants && event.participants.some(function(p) { 
+                return p.userId === currentUser.uid; 
+            });
+            
+            if (isParticipant && endDateNextDay <= today) {
+                pastEvents.push({id: doc.id, data: event});
+            }
+        });
+        
+        pastEvents.sort(function(a, b) {
+            return b.data.startDate.toDate() - a.data.startDate.toDate();
+        });
+        
+        const container = document.getElementById('pastParticipatingEvents');
+        
+        if (pastEvents.length === 0) {
+            container.innerHTML = '<div class="empty-state"><p>参加済みイベントはありません</p></div>';
+        } else {
+            let html = '';
+            pastEvents.forEach(function(item) {
+                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')" style="margin-bottom: 10px;">';
+                html += '<div class="card-title">' + item.data.title + '</div>';
+                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
+                html += '</div>';
+            });
+            container.innerHTML = html;
+        }
+    });
 }
 
 function loadMyPageProfile() {
