@@ -683,7 +683,7 @@
                 <div class="section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2 class="section-title" style="margin: 0; border: none; padding: 0;">🎉 イベント一覧</h2>
-                       <h2 class="section-title">🎉 イベント一覧</h2> 
+                        <button class="btn btn-primary btn-small" onclick="showCreateEventModal()">✨ 作成</button>
                     </div>
                     <div id="allEventsList" class="cards-grid"></div>
                 </div>
@@ -1071,9 +1071,10 @@
             }
         }
         
-function loadHomeData() {
+       function loadHomeData() {
     loadTodayEvents();
     loadAllEvents();
+    updateCreateButtonVisibility();
 }
 
 function updateCreateButtonVisibility() {
@@ -1239,6 +1240,8 @@ function loadTodayParticipatingEvents() {
         var todayEvents = [];
         snapshot.forEach(function(doc) {
             const event = doc.data();
+            if (!event.startDate) return;
+            
             const startDate = event.startDate.toDate();
             startDate.setHours(0, 0, 0, 0);
             const endDate = event.endDate ? event.endDate.toDate() : null;
@@ -1280,7 +1283,7 @@ function loadTodayParticipatingEvents() {
             container.innerHTML = html;
         }
     });
-}
+}        
 
 function loadUpcomingParticipatingEvents() {
     const today = new Date();
@@ -1290,6 +1293,8 @@ function loadUpcomingParticipatingEvents() {
         var upcomingEvents = [];
         snapshot.forEach(function(doc) {
             const event = doc.data();
+            if (!event.startDate) return;
+            
             const startDate = event.startDate.toDate();
             startDate.setHours(0, 0, 0, 0);
             
@@ -1324,7 +1329,6 @@ function loadUpcomingParticipatingEvents() {
         }
     });
 }
-
 function loadPastParticipatingEvents() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1333,6 +1337,8 @@ function loadPastParticipatingEvents() {
         var pastEvents = [];
         snapshot.forEach(function(doc) {
             const event = doc.data();
+            if (!event.startDate) return;
+            
             const endDate = event.endDate ? event.endDate.toDate() : event.startDate.toDate();
             const endDateNextDay = new Date(endDate);
             endDateNextDay.setDate(endDateNextDay.getDate() + 1);
@@ -1368,7 +1374,6 @@ function loadPastParticipatingEvents() {
         }
     });
 }
-
 function loadMyPageProfile() {
     db.collection('users').doc(currentUser.uid).get().then(function(doc) {
         const userData = doc.data();
