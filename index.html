@@ -387,45 +387,11 @@
         }
         
         .collapsible-content.open {
-            max-height: 1000px;
+            max-height: 2000px;
         }
         
         .collapsible-body {
             padding: 0 20px 20px 20px;
-        }
-        
-        .participant-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .participant-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px;
-            background: rgba(0, 217, 255, 0.05);
-            border-radius: 10px;
-        }
-        
-        .participant-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #00d9ff, #7000ff);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 16px;
-            overflow: hidden;
-        }
-        
-        .participant-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
         
         .settings-menu {
@@ -681,10 +647,7 @@
                 </div>
                 
                 <div class="section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 class="section-title" style="margin: 0; border: none; padding: 0;">🎉 イベント一覧</h2>
-                       <h2 class="section-title">🎉 イベント一覧</h2> 
-                    </div>
+                    <h2 class="section-title">🎉 イベント一覧</h2>
                     <div id="allEventsList" class="cards-grid"></div>
                 </div>
             </div>
@@ -938,46 +901,46 @@
             }
         });
         
-       function initializeUserProfile() {
-    const userRef = db.collection('users').doc(currentUser.uid);
-    userRef.get().then(function(doc) {
-        if (!doc.exists) {
-            userRef.set({
-                uid: currentUser.uid,
-                email: currentUser.email,
-                displayName: currentUser.displayName || '',
-                realName: '',
-                nickname: currentUser.displayName || '',
-                photoURL: '',
-                publicEmail: '',
-                phone: '',
-                lineId: '',
-                instagram: '',
-                threads: '',
-                facebook: '',
-                twitter: '',
-                linkedin: '',
-                company: '',
-                businessCardFront: '',
-                businessCardBack: '',
-                bio: '',
-                canCreateEvents: currentUser.email === ADMIN_EMAIL,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        function initializeUserProfile() {
+            const userRef = db.collection('users').doc(currentUser.uid);
+            userRef.get().then(function(doc) {
+                if (!doc.exists) {
+                    userRef.set({
+                        uid: currentUser.uid,
+                        email: currentUser.email,
+                        displayName: currentUser.displayName || '',
+                        realName: '',
+                        nickname: currentUser.displayName || '',
+                        photoURL: '',
+                        publicEmail: '',
+                        phone: '',
+                        lineId: '',
+                        instagram: '',
+                        threads: '',
+                        facebook: '',
+                        twitter: '',
+                        linkedin: '',
+                        company: '',
+                        businessCardFront: '',
+                        businessCardBack: '',
+                        bio: '',
+                        canCreateEvents: currentUser.email === ADMIN_EMAIL,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    const userData = doc.data();
+                    if (userData.canCreateEvents === undefined) {
+                        userRef.update({
+                            canCreateEvents: currentUser.email === ADMIN_EMAIL
+                        });
+                    }
+                }
+                updateUserDisplay();
+                if (currentUser.email === ADMIN_EMAIL) {
+                    document.getElementById('adminMenu').classList.remove('hidden');
+                }
             });
-        } else {
-            const userData = doc.data();
-            if (userData.canCreateEvents === undefined) {
-                userRef.update({
-                    canCreateEvents: currentUser.email === ADMIN_EMAIL
-                });
-            }
         }
-        updateUserDisplay();
-        if (currentUser.email === ADMIN_EMAIL) {
-            document.getElementById('adminMenu').classList.remove('hidden');
-        }
-    });
-}
         
         function updateUserDisplay() {
             db.collection('users').doc(currentUser.uid).get().then(function(doc) {
@@ -1071,24 +1034,61 @@
             }
         }
         
-function loadHomeData() {
-    loadTodayEvents();
-    loadAllEvents();
-}
-
-function updateCreateButtonVisibility() {
-    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
-        const userData = doc.data();
-        const createBtn = document.querySelector('#homeTab .btn-primary');
-        if (createBtn) {
-            if (userData && userData.canCreateEvents) {
-                createBtn.style.display = 'block';
-            } else {
-                createBtn.style.display = 'none';
-            }
+        function loadHomeData() {
+            loadTodayEventsHome();
+            loadAllEvents();
         }
-    });
-}
+        
+        function loadTodayEventsHome() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            db.collection('events').get().then(function(snapshot) {
+                var todayEvents = [];
+                snapshot.forEach(function(doc) {
+                    const event = doc.data();
+                    if (!event.startDate) return;
+                    
+                    const startDate = event.startDate.toDate();
+                    startDate.setHours(0, 0, 0, 0);
+                    const endDate = event.endDate ? event.endDate.toDate() : null;
+                    
+                    const isParticipant = event.participants && event.participants.some(function(p) { 
+                        return p.userId === currentUser.uid; 
+                    });
+                    
+                    if (isParticipant && startDate <= today) {
+                        if (!endDate) {
+                            if (startDate.getTime() === today.getTime()) {
+                                todayEvents.push({id: doc.id, data: event});
+                            }
+                        } else {
+                            const endDateNextDay = new Date(endDate);
+                            endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+                            endDateNextDay.setHours(0, 0, 0, 0);
+                            if (today < endDateNextDay) {
+                                todayEvents.push({id: doc.id, data: event});
+                            }
+                        }
+                    }
+                });
+                
+                const section = document.getElementById('todayEventsSection');
+                const container = document.getElementById('todayEventsList');
+                
+                if (todayEvents.length === 0) {
+                    section.classList.add('hidden');
+                } else {
+                    section.classList.remove('hidden');
+                    let html = '<div class="cards-grid">';
+                    todayEvents.forEach(function(item) {
+                        html += renderEventCard(item.id, item.data, true);
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            });
+        }
         
         function loadAllEvents() {
             const container = document.getElementById('allEventsList');
@@ -1102,7 +1102,9 @@ function updateCreateButtonVisibility() {
                 }
                 let html = '';
                 snapshot.forEach(function(doc) {
-                    html += renderEventCard(doc.id, doc.data(), false);
+                    const event = doc.data();
+                    if (!event.startDate) return;
+                    html += renderEventCard(doc.id, event, false);
                 });
                 container.innerHTML = html;
             });
@@ -1139,455 +1141,248 @@ function updateCreateButtonVisibility() {
             return html;
         }
         
-    function loadMyPage() {
-    let html = '';
-    
-    html += '<div class="section">';
-    html += '<div class="collapsible">';
-    html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
-    html += '<span style="font-weight: 700;">👤 プロフィール</span>';
-    html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
-    html += '</div>';
-    html += '<div class="collapsible-content">';
-    html += '<div class="collapsible-body" id="profileContent"></div>';
-    html += '</div></div></div>';
-    
-    html += '<div class="section">';
-    html += '<h2 class="section-title">📅 本日参加のイベント</h2>';
-    html += '<div id="todayParticipatingEvents"></div>';
-    html += '</div>';
-    
-    html += '<div class="section">';
-    html += '<h2 class="section-title">🎫 参加予定のイベント</h2>';
-    html += '<div id="upcomingParticipatingEvents"></div>';
-    html += '</div>';
-    
-    html += '<div class="section">';
-    html += '<div class="collapsible">';
-    html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
-    html += '<span style="font-weight: 700;">✅ 参加済みイベント</span>';
-    html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
-    html += '</div>';
-    html += '<div class="collapsible-content">';
-    html += '<div class="collapsible-body" id="pastParticipatingEvents"></div>';
-    html += '</div></div></div>';
-    
-    document.getElementById('mypageTab').innerHTML = html;
-    
-    loadMyPageProfile();
-    loadTodayParticipatingEvents();
-    loadUpcomingParticipatingEvents();
-    loadPastParticipatingEvents();
-}
-
-function loadMyPageProfile() {
-    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
-        const userData = doc.data();
-        const displayName = getUserDisplayName(userData);
-        
-        let html = '<div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">';
-        html += '<button class="btn btn-secondary btn-small" onclick="showEditProfile()">✏️ 編集</button>';
-        html += '</div>';
-        
-        html += '<div class="profile-header">';
-        html += '<div class="profile-avatar">';
-        if (userData.photoURL) {
-            html += '<img src="' + userData.photoURL + '" alt="avatar">';
-        } else {
-            html += displayName.charAt(0).toUpperCase();
-        }
-        html += '</div>';
-        html += '<div><h2>' + displayName + '</h2><p style="color: #a0aec0;">' + currentUser.email + '</p></div>';
-        html += '</div>';
-        
-        if (userData.realName) html += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
-        if (userData.nickname) html += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
-        if (userData.publicEmail) html += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
-        if (userData.phone) html += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
-        if (userData.company) html += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
-        if (userData.bio) html += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
-        
-        if (userData.lineId || userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin) {
-            html += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
-            if (userData.lineId) html += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
-            if (userData.instagram) html += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
-            if (userData.threads) html += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
-            if (userData.facebook) html += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
-            if (userData.twitter) html += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
-            if (userData.linkedin) html += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
-            html += '</div></div>';
-        }
-        
-        if (userData.businessCardFront || userData.businessCardBack) {
-            html += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
-            if (userData.businessCardFront) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
-            if (userData.businessCardBack) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
-            html += '</div></div>';
-        }
-        
-        document.getElementById('profileContent').innerHTML = html;
-    });
-}
-
-function loadTodayParticipatingEvents() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    db.collection('events').get().then(function(snapshot) {
-        var todayEvents = [];
-        snapshot.forEach(function(doc) {
-            const event = doc.data();
-            const startDate = event.startDate.toDate();
-            startDate.setHours(0, 0, 0, 0);
-            const endDate = event.endDate ? event.endDate.toDate() : null;
-            
-            const isParticipant = event.participants && event.participants.some(function(p) { 
-                return p.userId === currentUser.uid; 
-            });
-            
-            if (isParticipant && startDate <= today) {
-                if (!endDate) {
-                    if (startDate.getTime() === today.getTime()) {
-                        todayEvents.push({id: doc.id, data: event});
-                    }
-                } else {
-                    const endDateNextDay = new Date(endDate);
-                    endDateNextDay.setDate(endDateNextDay.getDate() + 1);
-                    endDateNextDay.setHours(0, 0, 0, 0);
-                    if (today < endDateNextDay) {
-                        todayEvents.push({id: doc.id, data: event});
-                    }
-                }
-            }
-        });
-        
-        const container = document.getElementById('todayParticipatingEvents');
-        
-        if (todayEvents.length === 0) {
-            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
-        } else {
-            let html = '<div class="cards-grid">';
-            todayEvents.forEach(function(item) {
-                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
-                html += '<div class="card-title">' + item.data.title + '</div>';
-                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
-                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
-                html += '</div>';
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        }
-    });
-}
-
-function loadUpcomingParticipatingEvents() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    db.collection('events').get().then(function(snapshot) {
-        var upcomingEvents = [];
-        snapshot.forEach(function(doc) {
-            const event = doc.data();
-            const startDate = event.startDate.toDate();
-            startDate.setHours(0, 0, 0, 0);
-            
-            const isParticipant = event.participants && event.participants.some(function(p) { 
-                return p.userId === currentUser.uid; 
-            });
-            
-            if (isParticipant && startDate > today) {
-                upcomingEvents.push({id: doc.id, data: event});
-            }
-        });
-        
-        upcomingEvents.sort(function(a, b) {
-            return a.data.startDate.toDate() - b.data.startDate.toDate();
-        });
-        
-        const container = document.getElementById('upcomingParticipatingEvents');
-        
-        if (upcomingEvents.length === 0) {
-            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
-        } else {
-            let html = '<div class="cards-grid">';
-            upcomingEvents.forEach(function(item) {
-                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
-                html += '<div class="card-title">' + item.data.title + '</div>';
-                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
-                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
-                html += '</div>';
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        }
-    });
-}
-
-function loadPastParticipatingEvents() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    db.collection('events').get().then(function(snapshot) {
-        var pastEvents = [];
-        snapshot.forEach(function(doc) {
-            const event = doc.data();
-            if (!event.startDate) return;
-            
-            const endDate = event.endDate ? event.endDate.toDate() : event.startDate.toDate();
-            const endDateNextDay = new Date(endDate);
-            endDateNextDay.setDate(endDateNextDay.getDate() + 1);
-            endDateNextDay.setHours(0, 0, 0, 0);
-            
-            const isParticipant = event.participants && event.participants.some(function(p) { 
-                return p.userId === currentUser.uid; 
-            });
-            
-            if (isParticipant && endDateNextDay <= today) {
-                pastEvents.push({id: doc.id, data: event});
-            }
-        });
-        
-        pastEvents.sort(function(a, b) {
-            return b.data.startDate.toDate() - a.data.startDate.toDate();
-        });
-        
-        const container = document.getElementById('pastParticipatingEvents');
-        
-        if (pastEvents.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>参加済みイベントはありません</p></div>';
-        } else {
-            let html = '';
-            pastEvents.forEach(function(item) {
-                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')" style="margin-bottom: 10px;">';
-                html += '<div class="card-title">' + item.data.title + '</div>';
-                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
-                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
-                html += '</div>';
-            });
-            container.innerHTML = html;
-        }
-    });
-}
-
-function loadMyPageProfile() {
-    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
-        const userData = doc.data();
-        const displayName = getUserDisplayName(userData);
-        
-        let html = '<div style="display: flex; justfify-content: flex-end; margin-bottom: 15px;">';
-        html += '<button class="btn btn-secondary btn-small" onclick="showEditProfile()">✏️ 編集</button>';
-        html += '</div>';
-        
-        html += '<div class="profile-header">';
-        html += '<div class="profile-avatar">';
-        if (userData.photoURL) {
-            html += '<img src="' + userData.photoURL + '" alt="avatar">';
-        } else {
-            html += displayName.charAt(0).toUpperCase();
-        }
-        html += '</div>';
-        html += '<div><h2>' + displayName + '</h2><p style="color: #a0aec0;">' + currentUser.email + '</p></div>';
-        html += '</div>';
-        
-        if (userData.realName) html += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
-        if (userData.nickname) html += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
-        if (userData.publicEmail) html += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
-        if (userData.phone) html += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
-        if (userData.company) html += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
-        if (userData.bio) html += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
-        
-        if (userData.lineId || userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin) {
-            html += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
-            if (userData.lineId) html += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
-            if (userData.instagram) html += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
-            if (userData.threads) html += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
-            if (userData.facebook) html += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
-            if (userData.twitter) html += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
-            if (userData.linkedin) html += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
-            html += '</div></div>';
-        }
-        
-        if (userData.businessCardFront || userData.businessCardBack) {
-            html += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
-            if (userData.businessCardFront) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
-            if (userData.businessCardBack) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
-            html += '</div></div>';
-        }
-        
-        document.getElementById('profileContent').innerHTML = html;
-    });
-}
-
-function loadTodayParticipatingEvents() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    db.collection('events').get().then(function(snapshot) {
-        var todayEvents = [];
-        snapshot.forEach(function(doc) {
-            const event = doc.data();
-            if (!event.startDate) return;
-            
-            const startDate = event.startDate.toDate();
-            startDate.setHours(0, 0, 0, 0);
-            const endDate = event.endDate ? event.endDate.toDate() : null;
-            
-            const isParticipant = event.participants && event.participants.some(function(p) { 
-                return p.userId === currentUser.uid; 
-            });
-            
-            if (isParticipant && startDate <= today) {
-                if (!endDate) {
-                    if (startDate.getTime() === today.getTime()) {
-                        todayEvents.push({id: doc.id, data: event});
-                    }
-                } else {
-                    const endDateNextDay = new Date(endDate);
-                    endDateNextDay.setDate(endDateNextDay.getDate() + 1);
-                    endDateNextDay.setHours(0, 0, 0, 0);
-                    if (today < endDateNextDay) {
-                        todayEvents.push({id: doc.id, data: event});
-                    }
-                }
-            }
-        });
-        
-        const container = document.getElementById('todayParticipatingEvents');
-        
-        if (todayEvents.length === 0) {
-            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
-        } else {
-            let html = '<div class="cards-grid">';
-            todayEvents.forEach(function(item) {
-                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
-                html += '<div class="card-title">' + item.data.title + '</div>';
-                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
-                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
-                html += '</div>';
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        }
-    });
-}
-
-function loadUpcomingParticipatingEvents() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    db.collection('events').get().then(function(snapshot) {
-        var upcomingEvents = [];
-        snapshot.forEach(function(doc) {
-            const event = doc.data();
-            if (!event.startDate) return;
-            
-            const startDate = event.startDate.toDate();
-            startDate.setHours(0, 0, 0, 0);
-            
-            const isParticipant = event.participants && event.participants.some(function(p) { 
-                return p.userId === currentUser.uid; 
-            });
-            
-            if (isParticipant && startDate > today) {
-                upcomingEvents.push({id: doc.id, data: event});
-            }
-        });
-        
-        upcomingEvents.sort(function(a, b) {
-            return a.data.startDate.toDate() - b.data.startDate.toDate();
-        });
-        
-        const container = document.getElementById('upcomingParticipatingEvents');
-        
-        if (upcomingEvents.length === 0) {
-            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
-        } else {
-            let html = '<div class="cards-grid">';
-            upcomingEvents.forEach(function(item) {
-                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
-                html += '<div class="card-title">' + item.data.title + '</div>';
-                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
-                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
-                html += '</div>';
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        }
-    });
-}
-        
-        function loadMyPageEvents() {
-            return db.collection('events').get().then(function(snapshot) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+        function loadMyPage() {
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                const canCreate = userData && userData.canCreateEvents;
                 
-                var todayHosting = [];
-                var upcomingParticipating = [];
+                let html = '';
                 
+                if (canCreate) {
+                    html += '<div style="margin-bottom: 20px;">';
+                    html += '<button class="btn btn-primary" onclick="showCreateEventModal()" style="width: 100%;">✨ イベント作成</button>';
+                    html += '</div>';
+                }
+                
+                html += '<div class="section">';
+                html += '<div class="collapsible">';
+                html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
+                html += '<span style="font-weight: 700;">👤 プロフィール</span>';
+                html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
+                html += '</div>';
+                html += '<div class="collapsible-content">';
+                html += '<div class="collapsible-body" id="profileContent"></div>';
+                html += '</div></div></div>';
+                
+                html += '<div class="section">';
+                html += '<h2 class="section-title">📅 本日参加のイベント</h2>';
+                html += '<div id="todayParticipatingEvents"></div>';
+                html += '</div>';
+                
+                html += '<div class="section">';
+                html += '<h2 class="section-title">🎫 参加予定のイベント</h2>';
+                html += '<div id="upcomingParticipatingEvents"></div>';
+                html += '</div>';
+                
+                html += '<div class="section">';
+                html += '<div class="collapsible">';
+                html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
+                html += '<span style="font-weight: 700;">✅ 参加済みイベント</span>';
+                html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
+                html += '</div>';
+                html += '<div class="collapsible-content">';
+                html += '<div class="collapsible-body" id="pastParticipatingEvents"></div>';
+                html += '</div></div></div>';
+                
+                document.getElementById('mypageTab').innerHTML = html;
+                
+                loadMyPageProfile();
+                loadTodayParticipatingEvents();
+                loadUpcomingParticipatingEvents();
+                loadPastParticipatingEvents();
+            });
+        }
+        
+        function loadMyPageProfile() {
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                const displayName = getUserDisplayName(userData);
+                
+                let html = '<div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">';
+                html += '<button class="btn btn-secondary btn-small" onclick="showEditProfile()">✏️ 編集</button>';
+                html += '</div>';
+                
+                html += '<div class="profile-header">';
+                html += '<div class="profile-avatar">';
+                if (userData.photoURL) {
+                    html += '<img src="' + userData.photoURL + '" alt="avatar">';
+                } else {
+                    html += displayName.charAt(0).toUpperCase();
+                }
+                html += '</div>';
+                html += '<div><h2>' + displayName + '</h2><p style="color: #a0aec0;">' + currentUser.email + '</p></div>';
+                html += '</div>';
+                
+                if (userData.realName) html += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
+                if (userData.nickname) html += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
+                if (userData.publicEmail) html += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
+                if (userData.phone) html += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
+                if (userData.company) html += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
+                if (userData.bio) html += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
+                
+                if (userData.lineId || userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin) {
+                    html += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
+                    if (userData.lineId) html += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
+                    if (userData.instagram) html += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
+                    if (userData.threads) html += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
+                    if (userData.facebook) html += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
+                    if (userData.twitter) html += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
+                    if (userData.linkedin) html += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
+                    html += '</div></div>';
+                }
+                
+                if (userData.businessCardFront || userData.businessCardBack) {
+                    html += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
+                    if (userData.businessCardFront) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
+                    if (userData.businessCardBack) html += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
+                    html += '</div></div>';
+                }
+                
+                document.getElementById('profileContent').innerHTML = html;
+            });
+        }
+        
+        function loadTodayParticipatingEvents() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            db.collection('events').get().then(function(snapshot) {
+                var todayEvents = [];
                 snapshot.forEach(function(doc) {
                     const event = doc.data();
+                    if (!event.startDate) return;
+                    
                     const startDate = event.startDate.toDate();
+                    startDate.setHours(0, 0, 0, 0);
                     const endDate = event.endDate ? event.endDate.toDate() : null;
                     
-                    const isOrganizer = event.organizerId === currentUser.uid;
                     const isParticipant = event.participants && event.participants.some(function(p) { 
                         return p.userId === currentUser.uid; 
                     });
                     
-                    if (isOrganizer && startDate.toDateString() === today.toDateString()) {
-                        todayHosting.push({id: doc.id, data: event});
-                    }
-                    
-                    if (isParticipant && startDate >= today) {
-                        upcomingParticipating.push({id: doc.id, data: event});
+                    if (isParticipant && startDate <= today) {
+                        if (!endDate) {
+                            if (startDate.getTime() === today.getTime()) {
+                                todayEvents.push({id: doc.id, data: event});
+                            }
+                        } else {
+                            const endDateNextDay = new Date(endDate);
+                            endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+                            endDateNextDay.setHours(0, 0, 0, 0);
+                            if (today < endDateNextDay) {
+                                todayEvents.push({id: doc.id, data: event});
+                            }
+                        }
                     }
                 });
                 
-                let html = '';
+                const container = document.getElementById('todayParticipatingEvents');
                 
-                if (todayHosting.length > 0) {
-                    html += '<div class="section">';
-                    html += '<h2 class="section-title">📋 本日の主催イベント</h2>';
-                    todayHosting.forEach(function(item) {
-                        html += '<div class="collapsible">';
-                        html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
-                        html += '<div><div style="font-weight: 700; margin-bottom: 5px;">' + item.data.title + '</div>';
-                        html += '<div style="font-size: 13px; color: #a0aec0;">📅 ' + formatDate(item.data.startDate.toDate()) + '</div></div>';
-                        html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
+                if (todayEvents.length === 0) {
+                    container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
+                } else {
+                    let html = '<div class="cards-grid">';
+                    todayEvents.forEach(function(item) {
+                        html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
+                        html += '<div class="card-title">' + item.data.title + '</div>';
+                        html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                        html += '<div class="card-date">📍 ' + item.data.location + '</div>';
                         html += '</div>';
-                        html += '<div class="collapsible-content">';
-                        html += '<div class="collapsible-body">';
-                        html += '<div class="participant-list">';
-                        if (item.data.participants && item.data.participants.length > 0) {
-                            item.data.participants.forEach(function(p) {
-                                html += '<div class="participant-item" onclick="showUserProfile(\'' + p.userId + '\')">';
-                                html += '<div class="participant-avatar">' + p.userName.charAt(0).toUpperCase() + '</div>';
-                                html += '<div>' + p.userName + '</div>';
-                                html += '</div>';
-                            });
-                        } else {
-                            html += '<div style="color: #a0aec0; text-align: center;">参加者がまだいません</div>';
-                        }
-                        html += '</div></div></div></div>';
                     });
                     html += '</div>';
+                    container.innerHTML = html;
                 }
-                
-                if (upcomingParticipating.length > 0) {
-                    html += '<div class="section">';
-                    html += '<h2 class="section-title">🎫 参加予定イベント</h2>';
-                    html += '<div class="cards-grid">';
-                    upcomingParticipating.forEach(function(item) {
-                        html += renderEventCard(item.id, item.data, false);
+            });
+        }
+        
+        function loadUpcomingParticipatingEvents() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            db.collection('events').get().then(function(snapshot) {
+                var upcomingEvents = [];
+                snapshot.forEach(function(doc) {
+                    const event = doc.data();
+                    if (!event.startDate) return;
+                    
+                    const startDate = event.startDate.toDate();
+                    startDate.setHours(0, 0, 0, 0);
+                    
+                    const isParticipant = event.participants && event.participants.some(function(p) { 
+                        return p.userId === currentUser.uid; 
                     });
-                    html += '</div></div>';
-                }
+                    
+                    if (isParticipant && startDate > today) {
+                        upcomingEvents.push({id: doc.id, data: event});
+                    }
+                });
                 
-                return html;
+                upcomingEvents.sort(function(a, b) {
+                    return a.data.startDate.toDate() - b.data.startDate.toDate();
+                });
+                
+                const container = document.getElementById('upcomingParticipatingEvents');
+                
+                if (upcomingEvents.length === 0) {
+                    container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
+                } else {
+                    let html = '<div class="cards-grid">';
+                    upcomingEvents.forEach(function(item) {
+                        html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
+                        html += '<div class="card-title">' + item.data.title + '</div>';
+                        html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                        html += '<div class="card-date">📍 ' + item.data.location + '</div>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            });
+        }
+        
+        function loadPastParticipatingEvents() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            db.collection('events').get().then(function(snapshot) {
+                var pastEvents = [];
+                snapshot.forEach(function(doc) {
+                    const event = doc.data();
+                    if (!event.startDate) return;
+                    
+                    const endDate = event.endDate ? event.endDate.toDate() : event.startDate.toDate();
+                    const endDateNextDay = new Date(endDate);
+                    endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+                    endDateNextDay.setHours(0, 0, 0, 0);
+                    
+                    const isParticipant = event.participants && event.participants.some(function(p) { 
+                        return p.userId === currentUser.uid; 
+                    });
+                    
+                    if (isParticipant && endDateNextDay <= today) {
+                        pastEvents.push({id: doc.id, data: event});
+                    }
+                });
+                
+                pastEvents.sort(function(a, b) {
+                    return b.data.startDate.toDate() - a.data.startDate.toDate();
+                });
+                
+                const container = document.getElementById('pastParticipatingEvents');
+                
+                if (pastEvents.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>参加済みイベントはありません</p></div>';
+                } else {
+                    let html = '';
+                    pastEvents.forEach(function(item) {
+                        html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')" style="margin-bottom: 10px;">';
+                        html += '<div class="card-title">' + item.data.title + '</div>';
+                        html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                        html += '<div class="card-date">📍 ' + item.data.location + '</div>';
+                        html += '</div>';
+                    });
+                    container.innerHTML = html;
+                }
             });
         }
         
@@ -1595,7 +1390,7 @@ function loadUpcomingParticipatingEvents() {
             event.stopPropagation();
             const header = event.currentTarget;
             const content = header.nextElementSibling;
-            const icon = header.querySelector('i');
+            const icon = header.querySelector('i.fa-chevron-down');
             
             content.classList.toggle('open');
             if (content.classList.contains('open')) {
@@ -1803,24 +1598,24 @@ function loadUpcomingParticipatingEvents() {
             });
         }
         
-function showCreateEventModal() {
-    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
-        const userData = doc.data();
-        if (!userData || !userData.canCreateEvents) {
-            alert('イベント作成権限がありません');
-            return;
+        function showCreateEventModal() {
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                if (!userData || !userData.canCreateEvents) {
+                    alert('イベント作成権限がありません');
+                    return;
+                }
+                
+                document.getElementById('createEventModal').classList.add('active');
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(19, 0, 0, 0);
+                document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
+                const later = new Date(tomorrow);
+                later.setHours(21, 0, 0, 0);
+                document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
+            });
         }
-        
-        document.getElementById('createEventModal').classList.add('active');
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(19, 0, 0, 0);
-        document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
-        const later = new Date(tomorrow);
-        later.setHours(21, 0, 0, 0);
-        document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
-    });
-}
         
         function createNewEvent() {
             const title = document.getElementById('eventTitle').value;
@@ -1870,6 +1665,8 @@ function showCreateEventModal() {
         function showEventDetail(eventId) {
             db.collection('events').doc(eventId).get().then(function(doc) {
                 const event = doc.data();
+                if (!event.startDate) return;
+                
                 const eventDate = event.startDate.toDate();
                 const endDate = event.endDate ? event.endDate.toDate() : null;
                 const isOrganizer = event.organizerId === currentUser.uid;
@@ -2024,70 +1821,70 @@ function showCreateEventModal() {
             document.getElementById('contentModal').classList.add('active');
         }
         
-    function showAdmin() {
-    document.getElementById('contentModalTitle').textContent = '管理画面';
-    
-    db.collection('users').get().then(function(snapshot) {
-        let html = '<div style="margin-bottom: 20px;">';
-        html += '<h3 style="color: #00d9ff; margin-bottom: 15px;">ユーザー管理</h3>';
-        html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
-        
-        snapshot.forEach(function(doc) {
-            const user = doc.data();
-            const displayName = user.realName || user.nickname || user.displayName || 'ユーザー';
-            const canCreate = user.canCreateEvents || false;
+        function showAdmin() {
+            document.getElementById('contentModalTitle').textContent = '管理画面';
             
-            html += '<div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(10, 14, 39, 0.4); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px;">';
-            html += '<div>';
-            html += '<div style="font-weight: 700; margin-bottom: 5px;">' + displayName + '</div>';
-            html += '<div style="font-size: 13px; color: #a0aec0;">' + user.email + '</div>';
-            html += '</div>';
-            
-            if (user.email === ADMIN_EMAIL) {
-                html += '<span class="badge badge-today">管理者</span>';
-            } else {
-                if (canCreate) {
-                    html += '<button class="btn btn-danger btn-small" onclick="revokeCreatePermission(\'' + doc.id + '\')">権限削除</button>';
-                } else {
-                    html += '<button class="btn btn-primary btn-small" onclick="grantCreatePermission(\'' + doc.id + '\')">権限付与</button>';
-                }
-            }
-            
-            html += '</div>';
-        });
+            db.collection('users').get().then(function(snapshot) {
+                let html = '<div style="margin-bottom: 20px;">';
+                html += '<h3 style="color: #00d9ff; margin-bottom: 15px;">ユーザー管理</h3>';
+                html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+                
+                snapshot.forEach(function(doc) {
+                    const user = doc.data();
+                    const displayName = user.realName || user.nickname || user.displayName || 'ユーザー';
+                    const canCreate = user.canCreateEvents || false;
+                    
+                    html += '<div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(10, 14, 39, 0.4); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px;">';
+                    html += '<div>';
+                    html += '<div style="font-weight: 700; margin-bottom: 5px;">' + displayName + '</div>';
+                    html += '<div style="font-size: 13px; color: #a0aec0;">' + user.email + '</div>';
+                    html += '</div>';
+                    
+                    if (user.email === ADMIN_EMAIL) {
+                        html += '<span class="badge badge-today">管理者</span>';
+                    } else {
+                        if (canCreate) {
+                            html += '<button class="btn btn-danger btn-small" onclick="revokeCreatePermission(\'' + doc.id + '\')">権限削除</button>';
+                        } else {
+                            html += '<button class="btn btn-primary btn-small" onclick="grantCreatePermission(\'' + doc.id + '\')">権限付与</button>';
+                        }
+                    }
+                    
+                    html += '</div>';
+                });
+                
+                html += '</div></div>';
+                
+                document.getElementById('contentModalBody').innerHTML = html;
+                document.getElementById('contentModal').classList.add('active');
+            });
+        }
         
-        html += '</div></div>';
+        function grantCreatePermission(userId) {
+            if (!confirm('このユーザーにイベント作成権限を付与しますか?')) return;
+            
+            db.collection('users').doc(userId).update({
+                canCreateEvents: true
+            }).then(function() {
+                alert('権限を付与しました');
+                showAdmin();
+            }).catch(function(error) {
+                alert('エラーが発生しました: ' + error.message);
+            });
+        }
         
-        document.getElementById('contentModalBody').innerHTML = html;
-        document.getElementById('contentModal').classList.add('active');
-    });
-}
-
-function grantCreatePermission(userId) {
-    if (!confirm('このユーザーにイベント作成権限を付与しますか?')) return;
-    
-    db.collection('users').doc(userId).update({
-        canCreateEvents: true
-    }).then(function() {
-        alert('権限を付与しました');
-        showAdmin();
-    }).catch(function(error) {
-        alert('エラーが発生しました: ' + error.message);
-    });
-}
-
-function revokeCreatePermission(userId) {
-    if (!confirm('このユーザーのイベント作成権限を削除しますか?')) return;
-    
-    db.collection('users').doc(userId).update({
-        canCreateEvents: false
-    }).then(function() {
-        alert('権限を削除しました');
-        showAdmin();
-    }).catch(function(error) {
-        alert('エラーが発生しました: ' + error.message);
-    });
-}
+        function revokeCreatePermission(userId) {
+            if (!confirm('このユーザーのイベント作成権限を削除しますか?')) return;
+            
+            db.collection('users').doc(userId).update({
+                canCreateEvents: false
+            }).then(function() {
+                alert('権限を削除しました');
+                showAdmin();
+            }).catch(function(error) {
+                alert('エラーが発生しました: ' + error.message);
+            });
+        }
         
         function formatDate(date) {
             const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', weekday: 'short' };
