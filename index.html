@@ -1796,16 +1796,24 @@ function loadUpcomingParticipatingEvents() {
             });
         }
         
-        function showCreateEventModal() {
-            document.getElementById('createEventModal').classList.add('active');
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(19, 0, 0, 0);
-            document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
-            const later = new Date(tomorrow);
-            later.setHours(21, 0, 0, 0);
-            document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
+function showCreateEventModal() {
+    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+        const userData = doc.data();
+        if (!userData || !userData.canCreateEvents) {
+            alert('イベント作成権限がありません');
+            return;
         }
+        
+        document.getElementById('createEventModal').classList.add('active');
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(19, 0, 0, 0);
+        document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
+        const later = new Date(tomorrow);
+        later.setHours(21, 0, 0, 0);
+        document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
+    });
+}
         
         function createNewEvent() {
             const title = document.getElementById('eventTitle').value;
