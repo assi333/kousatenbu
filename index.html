@@ -683,7 +683,7 @@
                 <div class="section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2 class="section-title" style="margin: 0; border: none; padding: 0;">🎉 イベント一覧</h2>
-                        <button class="btn btn-primary btn-small" onclick="showCreateEventModal()">✨ 作成</button>
+                       <h2 class="section-title">🎉 イベント一覧</h2> 
                     </div>
                     <div id="allEventsList" class="cards-grid"></div>
                 </div>
@@ -1071,10 +1071,9 @@
             }
         }
         
-       function loadHomeData() {
+function loadHomeData() {
     loadTodayEvents();
     loadAllEvents();
-    updateCreateButtonVisibility();
 }
 
 function updateCreateButtonVisibility() {
@@ -1240,8 +1239,6 @@ function loadTodayParticipatingEvents() {
         var todayEvents = [];
         snapshot.forEach(function(doc) {
             const event = doc.data();
-            if (!event.startDate) return;
-            
             const startDate = event.startDate.toDate();
             startDate.setHours(0, 0, 0, 0);
             const endDate = event.endDate ? event.endDate.toDate() : null;
@@ -1283,7 +1280,7 @@ function loadTodayParticipatingEvents() {
             container.innerHTML = html;
         }
     });
-}        
+}
 
 function loadUpcomingParticipatingEvents() {
     const today = new Date();
@@ -1293,8 +1290,6 @@ function loadUpcomingParticipatingEvents() {
         var upcomingEvents = [];
         snapshot.forEach(function(doc) {
             const event = doc.data();
-            if (!event.startDate) return;
-            
             const startDate = event.startDate.toDate();
             startDate.setHours(0, 0, 0, 0);
             
@@ -1329,6 +1324,7 @@ function loadUpcomingParticipatingEvents() {
         }
     });
 }
+
 function loadPastParticipatingEvents() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1374,12 +1370,13 @@ function loadPastParticipatingEvents() {
         }
     });
 }
+
 function loadMyPageProfile() {
     db.collection('users').doc(currentUser.uid).get().then(function(doc) {
         const userData = doc.data();
         const displayName = getUserDisplayName(userData);
         
-        let html = '<div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">';
+        let html = '<div style="display: flex; justfify-content: flex-end; margin-bottom: 15px;">';
         html += '<button class="btn btn-secondary btn-small" onclick="showEditProfile()">✏️ 編集</button>';
         html += '</div>';
         
@@ -1433,6 +1430,8 @@ function loadTodayParticipatingEvents() {
         var todayEvents = [];
         snapshot.forEach(function(doc) {
             const event = doc.data();
+            if (!event.startDate) return;
+            
             const startDate = event.startDate.toDate();
             startDate.setHours(0, 0, 0, 0);
             const endDate = event.endDate ? event.endDate.toDate() : null;
@@ -1460,16 +1459,17 @@ function loadTodayParticipatingEvents() {
         const container = document.getElementById('todayParticipatingEvents');
         
         if (todayEvents.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>本日の参加イベントはありません</p></div>';
+            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
         } else {
-            let html = '';
+            let html = '<div class="cards-grid">';
             todayEvents.forEach(function(item) {
-                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')" style="margin-bottom: 10px;">';
+                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
                 html += '<div class="card-title">' + item.data.title + '</div>';
                 html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
                 html += '<div class="card-date">📍 ' + item.data.location + '</div>';
                 html += '</div>';
             });
+            html += '</div>';
             container.innerHTML = html;
         }
     });
@@ -1483,6 +1483,8 @@ function loadUpcomingParticipatingEvents() {
         var upcomingEvents = [];
         snapshot.forEach(function(doc) {
             const event = doc.data();
+            if (!event.startDate) return;
+            
             const startDate = event.startDate.toDate();
             startDate.setHours(0, 0, 0, 0);
             
@@ -1502,16 +1504,17 @@ function loadUpcomingParticipatingEvents() {
         const container = document.getElementById('upcomingParticipatingEvents');
         
         if (upcomingEvents.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>参加予定のイベントはありません</p></div>';
+            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
         } else {
-            let html = '';
+            let html = '<div class="cards-grid">';
             upcomingEvents.forEach(function(item) {
-                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')" style="margin-bottom: 10px;">';
+                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
                 html += '<div class="card-title">' + item.data.title + '</div>';
                 html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
                 html += '<div class="card-date">📍 ' + item.data.location + '</div>';
                 html += '</div>';
             });
+            html += '</div>';
             container.innerHTML = html;
         }
     });
