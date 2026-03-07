@@ -693,15 +693,54 @@
         </div>
     </div>
 <div id="createEventModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">新しいイベント作成</h2>
-                <button class="close-btn" onclick="closeModal('createEventModal')">&times;</button>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">新しいイベント作成</h2>
+            <button class="close-btn" onclick="closeModal('createEventModal')">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>イベント名</label>
+            <input type="text" id="eventTitle" placeholder="例: 春の交流会">
+        </div>
+        <div class="form-group">
+            <label>主催者</label>
+            <input type="text" id="eventOrganizer" placeholder="例: 交差点部実行委員会">
+        </div>
+        <div class="form-group">
+            <label>作成者（自動入力）</label>
+            <input type="text" id="eventCreator" disabled style="background: rgba(0, 217, 255, 0.1);">
+        </div>
+        <div class="form-group">
+            <label>説明</label>
+            <textarea id="eventDescription" rows="4" placeholder="イベントの詳細を入力"></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>開始日時</label>
+                <input type="datetime-local" id="eventStartDate">
             </div>
             <div class="form-group">
-                <label>イベント名</label>
-                <input type="text" id="eventTitle" placeholder="例: 春の交流会">
+                <label>終了日時</label>
+                <input type="datetime-local" id="eventEndDate">
             </div>
+        </div>
+        <div class="form-group">
+            <label>場所</label>
+            <input type="text" id="eventLocation" placeholder="例: 渋谷カフェ">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>定員</label>
+                <input type="number" id="eventCapacity" placeholder="例: 20" min="1">
+            </div>
+            <div class="form-group">
+                <label>参加費（円）</label>
+                <input type="number" id="eventFee" placeholder="例: 3000" min="0">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="createNewEvent()">イベントを作成</button>
+    </div>
+</div>
             <div class="form-group">
                 <label>説明</label>
                 <textarea id="eventDescription" rows="4" placeholder="イベントの詳細を入力"></textarea>
@@ -1651,66 +1690,75 @@ function deleteCreatedEvent(eventId) {
             });
         }
         
-        function showCreateEventModal() {
-            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
-                const userData = doc.data();
-                if (!userData || !userData.canCreateEvents) {
-                    alert('イベント作成権限がありません');
-                    return;
-                }
-                
-                document.getElementById('createEventModal').classList.add('active');
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                tomorrow.setHours(19, 0, 0, 0);
-                document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
-                const later = new Date(tomorrow);
-                later.setHours(21, 0, 0, 0);
-                document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
-            });
-        }
-        
-function createNewEvent() {
-    const title = document.getElementById('eventTitle').value;
-    const description = document.getElementById('eventDescription').value;
-    const startDate = document.getElementById('eventStartDate').value;
-    const endDate = document.getElementById('eventEndDate').value;
-    const location = document.getElementById('eventLocation').value;
-    const capacity = parseInt(document.getElementById('eventCapacity').value);
-    const fee = parseInt(document.getElementById('eventFee').value) || 0;
-    
-    if (!title || !description || !startDate || !endDate || !location || !capacity) {
-        alert('全ての項目を入力してください');
-        return;
-    }
-    
+function showCreateEventModal() {
     db.collection('users').doc(currentUser.uid).get().then(function(doc) {
         const userData = doc.data();
-        const organizerName = userData.realName || userData.nickname || userData.displayName || 'ユーザー';
+        if (!userData || !userData.canCreateEvents) {
+            alert('イベント作成権限がありません');
+            return;
+        }
         
-        return db.collection('events').add({
-            title: title,
-            description: description,
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
-            location: location,
-            capacity: capacity,
-            fee: fee,
-            organizerId: currentUser.uid,
-            organizerName: organizerName,
-            participants: [],
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }).then(function() {
-        closeModal('createEventModal');
-        clearEventForm();
-        alert('イベントを作成しました!');
-        loadMyPage();
-    }).catch(function(error) {
-        alert('エラーが発生しました: ' + error.message);
+        const creatorName = userData.realName || userData.nickname || userData.displayName || 'ユーザー';
+        document.getElementById('eventCreator').value = creatorName;
+        
+        document.getElementById('createEventModal').classList.add('active');
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(19, 0, 0, 0);
+        document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
+        const later = new Date(tomorrow);
+        later.setHours(21, 0, 0, 0);
+        document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
     });
 }
         
+function showEventDetail(eventId) {
+    db.collection('events').doc(eventId).get().then(function(doc) {
+        const event = doc.data();
+        if (!event.startDate) return;
+        
+        const eventDate = event.startDate.toDate();
+        const endDate = event.endDate ? event.endDate.toDate() : null;
+        const isOrganizer = event.organizerId === currentUser.uid;
+        const isParticipant = event.participants && event.participants.some(function(p) { 
+            return p.userId === currentUser.uid; 
+        });
+        
+        document.getElementById('detailEventTitle').textContent = event.title;
+        
+        let content = '<div style="margin-bottom: 20px;"><p style="color: #cbd5e0; margin-bottom: 15px;">' + event.description + '</p>';
+        content += '<div style="display: grid; gap: 10px;">';
+        content += '<p><strong>📅 開始:</strong> ' + formatDate(eventDate) + '</p>';
+        if (endDate) content += '<p><strong>⏰ 終了:</strong> ' + formatDate(endDate) + '</p>';
+        content += '<p><strong>📍 場所:</strong> ' + event.location + '</p>';
+        content += '<p><strong>👥 定員:</strong> ' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '名</p>';
+        content += '<p><strong>💰 参加費:</strong> ' + (event.fee || 0) + '円</p>';
+        
+        if (event.organizer) {
+            content += '<p><strong>👤 主催者:</strong> ' + event.organizer + '</p>';
+        }
+        if (event.creatorName) {
+            content += '<p><strong>✏️ 作成者:</strong> ' + event.creatorName + '</p>';
+        }
+        
+        content += '</div></div>';
+        
+        content += '<div class="btn-group">';
+        if (!isOrganizer && !isParticipant) {
+            content += '<button class="btn btn-primary" onclick="joinEvent(\'' + eventId + '\')">参加を予定する</button>';
+        }
+        if (isParticipant && !isOrganizer) {
+            content += '<button class="btn btn-danger" onclick="leaveEvent(\'' + eventId + '\')">キャンセル</button>';
+        }
+        if (isOrganizer) {
+            content += '<button class="btn btn-danger" onclick="deleteEvent(\'' + eventId + '\')">削除</button>';
+        }
+        content += '</div>';
+        
+        document.getElementById('eventDetailContent').innerHTML = content;
+        document.getElementById('eventDetailModal').classList.add('active');
+    });
+}      
         function clearEventForm() {
             document.getElementById('eventTitle').value = '';
             document.getElementById('eventDescription').value = '';
