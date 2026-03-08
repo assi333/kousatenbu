@@ -130,6 +130,11 @@
             box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
         }
         
+        input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
         .btn {
             width: 100%;
             padding: 14px;
@@ -693,54 +698,23 @@
         </div>
     </div>
 <div id="createEventModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 class="modal-title">新しいイベント作成</h2>
-            <button class="close-btn" onclick="closeModal('createEventModal')">&times;</button>
-        </div>
-        <div class="form-group">
-            <label>イベント名</label>
-            <input type="text" id="eventTitle" placeholder="例: 春の交流会">
-        </div>
-        <div class="form-group">
-            <label>主催者</label>
-            <input type="text" id="eventOrganizer" placeholder="例: 交差点部実行委員会">
-        </div>
-        <div class="form-group">
-            <label>作成者（自動入力）</label>
-            <input type="text" id="eventCreator" disabled style="background: rgba(0, 217, 255, 0.1);">
-        </div>
-        <div class="form-group">
-            <label>説明</label>
-            <textarea id="eventDescription" rows="4" placeholder="イベントの詳細を入力"></textarea>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label>開始日時</label>
-                <input type="datetime-local" id="eventStartDate">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">新しいイベント作成</h2>
+                <button class="close-btn" onclick="closeModal('createEventModal')">&times;</button>
             </div>
             <div class="form-group">
-                <label>終了日時</label>
-                <input type="datetime-local" id="eventEndDate">
-            </div>
-        </div>
-        <div class="form-group">
-            <label>場所</label>
-            <input type="text" id="eventLocation" placeholder="例: 渋谷カフェ">
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label>定員</label>
-                <input type="number" id="eventCapacity" placeholder="例: 20" min="1">
+                <label>イベント名</label>
+                <input type="text" id="eventTitle" placeholder="例: 春の交流会">
             </div>
             <div class="form-group">
-                <label>参加費（円）</label>
-                <input type="number" id="eventFee" placeholder="例: 3000" min="0">
+                <label>主催者</label>
+                <input type="text" id="eventOrganizer" placeholder="例: 交差点部実行委員会">
             </div>
-        </div>
-        <button class="btn btn-primary" onclick="createNewEvent()">イベントを作成</button>
-    </div>
-</div>
+            <div class="form-group">
+                <label>作成者（自動入力）</label>
+                <input type="text" id="eventCreator" disabled style="background: rgba(0, 217, 255, 0.1);">
+            </div>
             <div class="form-group">
                 <label>説明</label>
                 <textarea id="eventDescription" rows="4" placeholder="イベントの詳細を入力"></textarea>
@@ -770,6 +744,52 @@
                 </div>
             </div>
             <button class="btn btn-primary" onclick="createNewEvent()">イベントを作成</button>
+        </div>
+    </div>
+    
+    <div id="editEventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">イベント編集</h2>
+                <button class="close-btn" onclick="closeModal('editEventModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>イベント名</label>
+                <input type="text" id="editEventTitle" placeholder="例: 春の交流会">
+            </div>
+            <div class="form-group">
+                <label>主催者</label>
+                <input type="text" id="editEventOrganizer" placeholder="例: 交差点部実行委員会">
+            </div>
+            <div class="form-group">
+                <label>説明</label>
+                <textarea id="editEventDescription" rows="4" placeholder="イベントの詳細を入力"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>開始日時</label>
+                    <input type="datetime-local" id="editEventStartDate">
+                </div>
+                <div class="form-group">
+                    <label>終了日時</label>
+                    <input type="datetime-local" id="editEventEndDate">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>場所</label>
+                <input type="text" id="editEventLocation" placeholder="例: 渋谷カフェ">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>定員</label>
+                    <input type="number" id="editEventCapacity" placeholder="例: 20" min="1">
+                </div>
+                <div class="form-group">
+                    <label>参加費（円）</label>
+                    <input type="number" id="editEventFee" placeholder="例: 3000" min="0">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveEditedEvent()">保存</button>
         </div>
     </div>
     
@@ -891,48 +911,7 @@
             <img id="cardImageView" class="card-image-modal" src="" alt="名刺">
         </div>
     </div>
-
-     <div id="editEventModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">イベント編集</h2>
-                <button class="close-btn" onclick="closeModal('editEventModal')">&times;</button>
-            </div>
-            <div class="form-group">
-                <label>イベント名</label>
-                <input type="text" id="editEventTitle" placeholder="例: 春の交流会">
-            </div>
-            <div class="form-group">
-                <label>説明</label>
-                <textarea id="editEventDescription" rows="4" placeholder="イベントの詳細を入力"></textarea>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>開始日時</label>
-                    <input type="datetime-local" id="editEventStartDate">
-                </div>
-                <div class="form-group">
-                    <label>終了日時</label>
-                    <input type="datetime-local" id="editEventEndDate">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>場所</label>
-                <input type="text" id="editEventLocation" placeholder="例: 渋谷カフェ">
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>定員</label>
-                    <input type="number" id="editEventCapacity" placeholder="例: 20" min="1">
-                </div>
-                <div class="form-group">
-                    <label>参加費（円）</label>
-                    <input type="number" id="editEventFee" placeholder="例: 3000" min="0">
-                </div>
-            </div>
-            <button class="btn btn-primary" onclick="saveEditedEvent()">保存</button>
-        </div>
-    </div>   
+    
     <div id="contentModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -966,6 +945,7 @@
         var isPhotoUploading = false;
         var isCardFrontUploading = false;
         var isCardBackUploading = false;
+        var currentEditingEventId = null;
         
         const ADMIN_EMAIL = 'assi14iii@gmail.com';
         
@@ -1194,7 +1174,7 @@
             const eventDate = event.startDate.toDate();
             const endDate = event.endDate ? event.endDate.toDate() : null;
             const now = new Date();
-            const isOrganizer = event.organizerId === currentUser.uid;
+            const isOrganizer = event.creatorId === currentUser.uid;
             const isParticipant = event.participants && event.participants.some(function(p) { 
                 return p.userId === currentUser.uid; 
             });
@@ -1221,63 +1201,63 @@
             return html;
         }
         
-function loadMyPage() {
-    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
-        const userData = doc.data();
-        const canCreate = userData && userData.canCreateEvents;
-        
-        let html = '';
-        
-        if (canCreate) {
-            html += '<div style="margin-bottom: 20px;">';
-            html += '<button class="btn btn-primary" onclick="showCreateEventModal()" style="width: 100%;">✨ イベント作成</button>';
-            html += '</div>';
+        function loadMyPage() {
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                const canCreate = userData && userData.canCreateEvents;
+                
+                let html = '';
+                
+                if (canCreate) {
+                    html += '<div style="margin-bottom: 20px;">';
+                    html += '<button class="btn btn-primary" onclick="showCreateEventModal()" style="width: 100%;">✨ イベント作成</button>';
+                    html += '</div>';
+                }
+                
+                html += '<div class="section">';
+                html += '<div class="collapsible">';
+                html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
+                html += '<span style="font-weight: 700;">👤 プロフィール</span>';
+                html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
+                html += '</div>';
+                html += '<div class="collapsible-content">';
+                html += '<div class="collapsible-body" id="profileContent"></div>';
+                html += '</div></div></div>';
+                
+                html += '<div class="section">';
+                html += '<h2 class="section-title">📅 本日参加のイベント</h2>';
+                html += '<div id="todayParticipatingEvents"></div>';
+                html += '</div>';
+                
+                html += '<div class="section">';
+                html += '<h2 class="section-title">🎫 参加予定のイベント</h2>';
+                html += '<div id="upcomingParticipatingEvents"></div>';
+                html += '</div>';
+                
+                html += '<div class="section">';
+                html += '<h2 class="section-title">📝 作成したイベント</h2>';
+                html += '<div id="createdEvents"></div>';
+                html += '</div>';
+                
+                html += '<div class="section">';
+                html += '<div class="collapsible">';
+                html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
+                html += '<span style="font-weight: 700;">✅ 参加済みイベント</span>';
+                html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
+                html += '</div>';
+                html += '<div class="collapsible-content">';
+                html += '<div class="collapsible-body" id="pastParticipatingEvents"></div>';
+                html += '</div></div></div>';
+                
+                document.getElementById('mypageTab').innerHTML = html;
+                
+                loadMyPageProfile();
+                loadTodayParticipatingEvents();
+                loadUpcomingParticipatingEvents();
+                loadCreatedEvents();
+                loadPastParticipatingEvents();
+            });
         }
-        
-        html += '<div class="section">';
-        html += '<div class="collapsible">';
-        html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
-        html += '<span style="font-weight: 700;">👤 プロフィール</span>';
-        html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
-        html += '</div>';
-        html += '<div class="collapsible-content">';
-        html += '<div class="collapsible-body" id="profileContent"></div>';
-        html += '</div></div></div>';
-        
-        html += '<div class="section">';
-        html += '<h2 class="section-title">📅 本日参加のイベント</h2>';
-        html += '<div id="todayParticipatingEvents"></div>';
-        html += '</div>';
-        
-        html += '<div class="section">';
-        html += '<h2 class="section-title">🎫 参加予定のイベント</h2>';
-        html += '<div id="upcomingParticipatingEvents"></div>';
-        html += '</div>';
-        
-        html += '<div class="section">';
-        html += '<h2 class="section-title">📝 作成したイベント</h2>';
-        html += '<div id="createdEvents"></div>';
-        html += '</div>';
-        
-        html += '<div class="section">';
-        html += '<div class="collapsible">';
-        html += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
-        html += '<span style="font-weight: 700;">✅ 参加済みイベント</span>';
-        html += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
-        html += '</div>';
-        html += '<div class="collapsible-content">';
-        html += '<div class="collapsible-body" id="pastParticipatingEvents"></div>';
-        html += '</div></div></div>';
-        
-        document.getElementById('mypageTab').innerHTML = html;
-        
-        loadMyPageProfile();
-        loadTodayParticipatingEvents();
-        loadUpcomingParticipatingEvents();
-        loadCreatedEvents();
-        loadPastParticipatingEvents();
-    });
-}
         
         function loadMyPageProfile() {
             db.collection('users').doc(currentUser.uid).get().then(function(doc) {
@@ -1426,58 +1406,95 @@ function loadMyPage() {
             });
         }
         
-function loadCreatedEvents() {
-    db.collection('events').where('organizerId', '==', currentUser.uid).get().then(function(snapshot) {
-        var createdEvents = [];
-        snapshot.forEach(function(doc) {
-            const event = doc.data();
-            if (!event.startDate) return;
-            createdEvents.push({id: doc.id, data: event});
-        });
-        
-        createdEvents.sort(function(a, b) {
-            return a.data.startDate.toDate() - b.data.startDate.toDate();
-        });
-        
-        const container = document.getElementById('createdEvents');
-        
-        if (createdEvents.length === 0) {
-            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
-        } else {
-            let html = '<div class="cards-grid">';
-            createdEvents.forEach(function(item) {
-                html += '<div class="card">';
-                html += '<div class="card-header">';
-                html += '<div>';
-                html += '<div class="card-title">' + item.data.title + '</div>';
-                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
-                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
-                html += '</div>';
-                html += '</div>';
-                html += '<div class="card-stats">';
-                html += '<div class="stat">👥 <span class="stat-value">' + (item.data.participants ? item.data.participants.length : 0) + '/' + item.data.capacity + '</span></div>';
-                html += '</div>';
-                html += '<div class="btn-group" style="margin-top: 15px;">';
-                html += '<button class="btn btn-secondary btn-small" onclick="showEditEvent(\'' + item.id + '\')">編集</button>';
-                html += '<button class="btn btn-danger btn-small" onclick="deleteCreatedEvent(\'' + item.id + '\')">削除</button>';
-                html += '</div>';
-                html += '</div>';
+        function loadCreatedEvents() {
+            db.collection('events').where('creatorId', '==', currentUser.uid).get().then(function(snapshot) {
+                var createdEvents = [];
+                snapshot.forEach(function(doc) {
+                    const event = doc.data();
+                    if (!event.startDate) return;
+                    createdEvents.push({id: doc.id, data: event});
+                });
+                
+                createdEvents.sort(function(a, b) {
+                    return a.data.startDate.toDate() - b.data.startDate.toDate();
+                });
+                
+                const container = document.getElementById('createdEvents');
+                
+                if (createdEvents.length === 0) {
+                    container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">なし</div>';
+                } else {
+                    let html = '<div class="cards-grid">';
+                    createdEvents.forEach(function(item) {
+                        html += '<div class="card">';
+                        html += '<div class="card-header">';
+                        html += '<div>';
+                        html += '<div class="card-title">' + item.data.title + '</div>';
+                        html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                        html += '<div class="card-date">📍 ' + item.data.location + '</div>';
+                        html += '</div>';
+                        html += '</div>';
+                        html += '<div class="card-stats">';
+                        html += '<div class="stat">👥 <span class="stat-value">' + (item.data.participants ? item.data.participants.length : 0) + '/' + item.data.capacity + '</span></div>';
+                        html += '</div>';
+                        html += '<div class="btn-group" style="margin-top: 15px;">';
+                        html += '<button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); showEditEvent(\'' + item.id + '\')">編集</button>';
+                        html += '<button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteCreatedEvent(\'' + item.id + '\')">削除</button>';
+                        html += '</div>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
             });
-            html += '</div>';
-            container.innerHTML = html;
         }
-    });
-}
-
-function deleteCreatedEvent(eventId) {
-    if (!confirm('このイベントを削除しますか?')) return;
-    db.collection('events').doc(eventId).delete()
-        .then(function() { 
-            alert('イベントを削除しました');
-            loadMyPage();
-        })
-        .catch(function(error) { alert('エラーが発生しました: ' + error.message); });
-}
+        
+        function loadPastParticipatingEvents() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            db.collection('events').get().then(function(snapshot) {
+                var pastEvents = [];
+                snapshot.forEach(function(doc) {
+                    const event = doc.data();
+                    if (!event.startDate) return;
+                    
+                    const endDate = event.endDate ? event.endDate.toDate() : event.startDate.toDate();
+                    const endDateNextDay = new Date(endDate);
+                    endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+                    endDateNextDay.setHours(0, 0, 0, 0);
+                    
+                    const isParticipant = event.participants && event.participants.some(function(p) { 
+                        return p.userId === currentUser.uid; 
+                    });
+                    
+                    if (isParticipant && endDateNextDay <= today) {
+                        pastEvents.push({id: doc.id, data: event});
+                    }
+                });
+                
+                pastEvents.sort(function(a, b) {
+                    return b.data.startDate.toDate() - a.data.startDate.toDate();
+                });
+                
+                const container = document.getElementById('pastParticipatingEvents');
+                
+                if (pastEvents.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>参加済みイベントはありません</p></div>';
+                } else {
+                    let html = '';
+                    pastEvents.forEach(function(item) {
+                        html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')" style="margin-bottom: 10px;">';
+                        html += '<div class="card-title">' + item.data.title + '</div>';
+                        html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                        html += '<div class="card-date">📍 ' + item.data.location + '</div>';
+                        html += '</div>';
+                    });
+                    container.innerHTML = html;
+                }
+            });
+        }
+        
         function toggleCollapsible(event) {
             event.stopPropagation();
             const header = event.currentTarget;
@@ -1690,83 +1707,147 @@ function deleteCreatedEvent(eventId) {
             });
         }
         
-function showCreateEventModal() {
-    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
-        const userData = doc.data();
-        if (!userData || !userData.canCreateEvents) {
-            alert('イベント作成権限がありません');
-            return;
+        function showCreateEventModal() {
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                if (!userData || !userData.canCreateEvents) {
+                    alert('イベント作成権限がありません');
+                    return;
+                }
+                
+                const creatorName = userData.realName || userData.nickname || userData.displayName || 'ユーザー';
+                document.getElementById('eventCreator').value = creatorName;
+                
+                document.getElementById('createEventModal').classList.add('active');
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(19, 0, 0, 0);
+                document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
+                const later = new Date(tomorrow);
+                later.setHours(21, 0, 0, 0);
+                document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
+            });
         }
         
-        const creatorName = userData.realName || userData.nickname || userData.displayName || 'ユーザー';
-        document.getElementById('eventCreator').value = creatorName;
-        
-        document.getElementById('createEventModal').classList.add('active');
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(19, 0, 0, 0);
-        document.getElementById('eventStartDate').value = tomorrow.toISOString().slice(0, 16);
-        const later = new Date(tomorrow);
-        later.setHours(21, 0, 0, 0);
-        document.getElementById('eventEndDate').value = later.toISOString().slice(0, 16);
-    });
-}
-        
-function showEventDetail(eventId) {
-    db.collection('events').doc(eventId).get().then(function(doc) {
-        const event = doc.data();
-        if (!event.startDate) return;
-        
-        const eventDate = event.startDate.toDate();
-        const endDate = event.endDate ? event.endDate.toDate() : null;
-        const isOrganizer = event.organizerId === currentUser.uid;
-        const isParticipant = event.participants && event.participants.some(function(p) { 
-            return p.userId === currentUser.uid; 
-        });
-        
-        document.getElementById('detailEventTitle').textContent = event.title;
-        
-        let content = '<div style="margin-bottom: 20px;"><p style="color: #cbd5e0; margin-bottom: 15px;">' + event.description + '</p>';
-        content += '<div style="display: grid; gap: 10px;">';
-        content += '<p><strong>📅 開始:</strong> ' + formatDate(eventDate) + '</p>';
-        if (endDate) content += '<p><strong>⏰ 終了:</strong> ' + formatDate(endDate) + '</p>';
-        content += '<p><strong>📍 場所:</strong> ' + event.location + '</p>';
-        content += '<p><strong>👥 定員:</strong> ' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '名</p>';
-        content += '<p><strong>💰 参加費:</strong> ' + (event.fee || 0) + '円</p>';
-        
-        if (event.organizer) {
-            content += '<p><strong>👤 主催者:</strong> ' + event.organizer + '</p>';
+        function createNewEvent() {
+            const title = document.getElementById('eventTitle').value;
+            const organizer = document.getElementById('eventOrganizer').value;
+            const description = document.getElementById('eventDescription').value;
+            const startDate = document.getElementById('eventStartDate').value;
+            const endDate = document.getElementById('eventEndDate').value;
+            const location = document.getElementById('eventLocation').value;
+            const capacity = parseInt(document.getElementById('eventCapacity').value);
+            const fee = parseInt(document.getElementById('eventFee').value) || 0;
+            
+            if (!title || !organizer || !description || !startDate || !endDate || !location || !capacity) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+            
+            db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+                const userData = doc.data();
+                const creatorName = userData.realName || userData.nickname || userData.displayName || 'ユーザー';
+                
+                return db.collection('events').add({
+                    title: title,
+                    organizer: organizer,
+                    creatorId: currentUser.uid,
+                    creatorName: creatorName,
+                    description: description,
+                    startDate: new Date(startDate),
+                    endDate: new Date(endDate),
+                    location: location,
+                    capacity: capacity,
+                    fee: fee,
+                    participants: [],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }).then(function() {
+                closeModal('createEventModal');
+                clearEventForm();
+                alert('イベントを作成しました!');
+                if (document.getElementById('mypageTab').classList.contains('hidden') === false) {
+                    loadMyPage();
+                }
+            }).catch(function(error) {
+                alert('エラーが発生しました: ' + error.message);
+            });
         }
-        if (event.creatorName) {
-            content += '<p><strong>✏️ 作成者:</strong> ' + event.creatorName + '</p>';
-        }
         
-        content += '</div></div>';
-        
-        content += '<div class="btn-group">';
-        if (!isOrganizer && !isParticipant) {
-            content += '<button class="btn btn-primary" onclick="joinEvent(\'' + eventId + '\')">参加を予定する</button>';
-        }
-        if (isParticipant && !isOrganizer) {
-            content += '<button class="btn btn-danger" onclick="leaveEvent(\'' + eventId + '\')">キャンセル</button>';
-        }
-        if (isOrganizer) {
-            content += '<button class="btn btn-danger" onclick="deleteEvent(\'' + eventId + '\')">削除</button>';
-        }
-        content += '</div>';
-        
-        document.getElementById('eventDetailContent').innerHTML = content;
-        document.getElementById('eventDetailModal').classList.add('active');
-    });
-}      
         function clearEventForm() {
             document.getElementById('eventTitle').value = '';
+            document.getElementById('eventOrganizer').value = '';
+            document.getElementById('eventCreator').value = '';
             document.getElementById('eventDescription').value = '';
             document.getElementById('eventStartDate').value = '';
             document.getElementById('eventEndDate').value = '';
             document.getElementById('eventLocation').value = '';
             document.getElementById('eventCapacity').value = '';
             document.getElementById('eventFee').value = '';
+        }
+        
+        function showEditEvent(eventId) {
+            currentEditingEventId = eventId;
+            db.collection('events').doc(eventId).get().then(function(doc) {
+                const event = doc.data();
+                
+                document.getElementById('editEventTitle').value = event.title;
+                document.getElementById('editEventOrganizer').value = event.organizer || '';
+                document.getElementById('editEventDescription').value = event.description;
+                document.getElementById('editEventStartDate').value = event.startDate.toDate().toISOString().slice(0, 16);
+                document.getElementById('editEventEndDate').value = event.endDate.toDate().toISOString().slice(0, 16);
+                document.getElementById('editEventLocation').value = event.location;
+                document.getElementById('editEventCapacity').value = event.capacity;
+                document.getElementById('editEventFee').value = event.fee || 0;
+                
+                document.getElementById('editEventModal').classList.add('active');
+            });
+        }
+        
+        function saveEditedEvent() {
+            if (!currentEditingEventId) return;
+            
+            const title = document.getElementById('editEventTitle').value;
+            const organizer = document.getElementById('editEventOrganizer').value;
+            const description = document.getElementById('editEventDescription').value;
+            const startDate = document.getElementById('editEventStartDate').value;
+            const endDate = document.getElementById('editEventEndDate').value;
+            const location = document.getElementById('editEventLocation').value;
+            const capacity = parseInt(document.getElementById('editEventCapacity').value);
+            const fee = parseInt(document.getElementById('editEventFee').value) || 0;
+            
+            if (!title || !organizer || !description || !startDate || !endDate || !location || !capacity) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+            
+            db.collection('events').doc(currentEditingEventId).update({
+                title: title,
+                organizer: organizer,
+                description: description,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+                location: location,
+                capacity: capacity,
+                fee: fee
+            }).then(function() {
+                closeModal('editEventModal');
+                alert('イベントを更新しました!');
+                loadMyPage();
+                currentEditingEventId = null;
+            }).catch(function(error) {
+                alert('エラーが発生しました: ' + error.message);
+            });
+        }
+        
+        function deleteCreatedEvent(eventId) {
+            if (!confirm('このイベントを削除しますか?')) return;
+            db.collection('events').doc(eventId).delete()
+                .then(function() { 
+                    alert('イベントを削除しました');
+                    loadMyPage();
+                })
+                .catch(function(error) { alert('エラーが発生しました: ' + error.message); });
         }
         
         function showEventDetail(eventId) {
@@ -1776,7 +1857,7 @@ function showEventDetail(eventId) {
                 
                 const eventDate = event.startDate.toDate();
                 const endDate = event.endDate ? event.endDate.toDate() : null;
-                const isOrganizer = event.organizerId === currentUser.uid;
+                const isCreator = event.creatorId === currentUser.uid;
                 const isParticipant = event.participants && event.participants.some(function(p) { 
                     return p.userId === currentUser.uid; 
                 });
@@ -1784,21 +1865,30 @@ function showEventDetail(eventId) {
                 document.getElementById('detailEventTitle').textContent = event.title;
                 
                 let content = '<div style="margin-bottom: 20px;"><p style="color: #cbd5e0; margin-bottom: 15px;">' + event.description + '</p>';
-                content += '<div style="display: grid; gap: 10px;"><p><strong>📅 開始:</strong> ' + formatDate(eventDate) + '</p>';
+                content += '<div style="display: grid; gap: 10px;">';
+                content += '<p><strong>📅 開始:</strong> ' + formatDate(eventDate) + '</p>';
                 if (endDate) content += '<p><strong>⏰ 終了:</strong> ' + formatDate(endDate) + '</p>';
                 content += '<p><strong>📍 場所:</strong> ' + event.location + '</p>';
                 content += '<p><strong>👥 定員:</strong> ' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '名</p>';
                 content += '<p><strong>💰 参加費:</strong> ' + (event.fee || 0) + '円</p>';
-                content += '<p><strong>👤 主催者:</strong> ' + event.organizerName + '</p></div></div>';
+                
+                if (event.organizer) {
+                    content += '<p><strong>👤 主催者:</strong> ' + event.organizer + '</p>';
+                }
+                if (event.creatorName) {
+                    content += '<p><strong>✏️ 作成者:</strong> ' + event.creatorName + '</p>';
+                }
+                
+                content += '</div></div>';
                 
                 content += '<div class="btn-group">';
-                if (!isOrganizer && !isParticipant) {
-                    content += '<button class="btn btn-primary" onclick="joinEvent(\'' + eventId + '\')">参加する</button>';
+                if (!isCreator && !isParticipant) {
+                    content += '<button class="btn btn-primary" onclick="joinEvent(\'' + eventId + '\')">参加を予定する</button>';
                 }
-                if (isParticipant && !isOrganizer) {
+                if (isParticipant && !isCreator) {
                     content += '<button class="btn btn-danger" onclick="leaveEvent(\'' + eventId + '\')">キャンセル</button>';
                 }
-                if (isOrganizer) {
+                if (isCreator) {
                     content += '<button class="btn btn-danger" onclick="deleteEvent(\'' + eventId + '\')">削除</button>';
                 }
                 content += '</div>';
@@ -1992,66 +2082,15 @@ function showEventDetail(eventId) {
                 alert('エラーが発生しました: ' + error.message);
             });
         }
- 
-var currentEditingEventId = null;
-
-function showEditEvent(eventId) {
-    currentEditingEventId = eventId;
-    db.collection('events').doc(eventId).get().then(function(doc) {
-        const event = doc.data();
         
-        document.getElementById('editEventTitle').value = event.title;
-        document.getElementById('editEventDescription').value = event.description;
-        document.getElementById('editEventStartDate').value = event.startDate.toDate().toISOString().slice(0, 16);
-        document.getElementById('editEventEndDate').value = event.endDate.toDate().toISOString().slice(0, 16);
-        document.getElementById('editEventLocation').value = event.location;
-        document.getElementById('editEventCapacity').value = event.capacity;
-        document.getElementById('editEventFee').value = event.fee || 0;
-        
-        document.getElementById('editEventModal').classList.add('active');
-    });
-}
-
-function saveEditedEvent() {
-    if (!currentEditingEventId) return;
-    
-    const title = document.getElementById('editEventTitle').value;
-    const description = document.getElementById('editEventDescription').value;
-    const startDate = document.getElementById('editEventStartDate').value;
-    const endDate = document.getElementById('editEventEndDate').value;
-    const location = document.getElementById('editEventLocation').value;
-    const capacity = parseInt(document.getElementById('editEventCapacity').value);
-    const fee = parseInt(document.getElementById('editEventFee').value) || 0;
-    
-    if (!title || !description || !startDate || !endDate || !location || !capacity) {
-        alert('全ての項目を入力してください');
-        return;
-    }
-    
-    db.collection('events').doc(currentEditingEventId).update({
-        title: title,
-        description: description,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        location: location,
-        capacity: capacity,
-        fee: fee
-    }).then(function() {
-        closeModal('editEventModal');
-        alert('イベントを更新しました!');
-        loadMyPage();
-        currentEditingEventId = null;
-    }).catch(function(error) {
-        alert('エラーが発生しました: ' + error.message);
-    });
-}       
         function formatDate(date) {
             const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', weekday: 'short' };
             return date.toLocaleDateString('ja-JP', options);
         }
         
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+            document.getElementById(modal
+Id).classList.remove('active');
         }
         
         document.querySelectorAll('.modal').forEach(function(modal) {
