@@ -948,13 +948,19 @@
         var currentEditingEventId = null;
         
         const ADMIN_EMAIL = 'assi14iii@gmail.com';
-
- document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('loginBtn').addEventListener('click', login);
-            document.getElementById('signupBtn').addEventListener('click', signup);
-            document.getElementById('googleLoginBtn1').addEventListener('click', googleLogin);
-            document.getElementById('googleLoginBtn2').addEventListener('click', googleLogin);
-        });       
+        
+        window.addEventListener('load', function() {
+            var loginBtn = document.getElementById('loginBtn');
+            var signupBtn = document.getElementById('signupBtn');
+            var googleBtn1 = document.getElementById('googleLoginBtn1');
+            var googleBtn2 = document.getElementById('googleLoginBtn2');
+            
+            if (loginBtn) loginBtn.addEventListener('click', login);
+            if (signupBtn) signupBtn.addEventListener('click', signup);
+            if (googleBtn1) googleBtn1.addEventListener('click', googleLogin);
+            if (googleBtn2) googleBtn2.addEventListener('click', googleLogin);
+        });
+        
         auth.onAuthStateChanged(function(user) {
             if (user) {
                 currentUser = user;
@@ -1180,7 +1186,7 @@
             const eventDate = event.startDate.toDate();
             const endDate = event.endDate ? event.endDate.toDate() : null;
             const now = new Date();
-            const isOrganizer = event.creatorId === currentUser.uid;
+            const isCreator = event.creatorId === currentUser.uid;
             const isParticipant = event.participants && event.participants.some(function(p) { 
                 return p.userId === currentUser.uid; 
             });
@@ -2095,8 +2101,7 @@
         }
         
         function closeModal(modalId) {
-            document.getElementById(modal
-Id).classList.remove('active');
+            document.getElementById(modalId).classList.remove('active');
         }
         
         document.querySelectorAll('.modal').forEach(function(modal) {
