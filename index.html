@@ -2133,7 +2133,11 @@ function leaveEvent(eventId) {
                 alert('エラーが発生しました: ' + error.message);
             });
         }
-        
+
+ function formatDate(date) {
+    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', weekday: 'short' };
+    return date.toLocaleDateString('ja-JP', options);
+}       
 function markAttendance(eventId, userId) {
     db.collection('events').doc(eventId).get().then(function(doc) {
         const event = doc.data();
