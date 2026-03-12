@@ -1250,20 +1250,10 @@ function renderEventCard(eventId, event, isToday) {
         return p.userId === currentUser.uid; 
     });
     
-    let status = 'upcoming', statusText = '開催予定';
-    if (endDate && endDate < now) { 
-        status = 'ended'; 
-        statusText = '終了'; 
-    } else if (eventDate.toDateString() === now.toDateString()) { 
-        status = 'today'; 
-        statusText = '本日開催'; 
-    }
-    
     let html = '<div class="card" onclick="showEventDetail(\'' + eventId + '\')">';
     html += '<div class="card-header"><div><div class="card-title">' + event.title + '</div>';
     html += '<div class="card-date">📅 ' + formatDate(eventDate) + '</div>';
-    html += '<div class="card-date">📍 ' + event.location + '</div></div>';
-    html += '<span class="badge badge-' + status + '">' + statusText + '</span></div>';
+    html += '<div class="card-date">📍 ' + event.location + '</div></div></div>';
     html += '<div class="card-stats">';
     html += '<div class="stat">💰 <span class="stat-value">' + (event.fee || 0) + '円</span></div>';
     html += '</div></div>';
@@ -1378,7 +1368,7 @@ function renderEventCard(eventId, event, isToday) {
             });
         }
         
-function loadTodayParticipatingEvents() {
+ function loadTodayParticipatingEvents() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -1392,11 +1382,11 @@ function loadTodayParticipatingEvents() {
             startDate.setHours(0, 0, 0, 0);
             const endDate = event.endDate ? event.endDate.toDate() : null;
             
-            const isParticipant = event.participants && event.participants.some(function(p) { 
+            const myParticipant = event.participants && event.participants.find(function(p) { 
                 return p.userId === currentUser.uid; 
             });
             
-            if (isParticipant && startDate <= today) {
+            if (myParticipant && myParticipant.attended && startDate <= today) {
                 if (!endDate) {
                     if (startDate.getTime() === today.getTime()) {
                         todayEvents.push({id: doc.id, data: event});
@@ -1419,15 +1409,12 @@ function loadTodayParticipatingEvents() {
         } else {
             let html = '<div class="cards-grid">';
             todayEvents.forEach(function(item) {
-                const myParticipant = item.data.participants.find(function(p) { return p.userId === currentUser.uid; });
-                const isAttended = myParticipant && myParticipant.attended;
-                
                 html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')">';
                 html += '<div class="card-title">' + item.data.title + '</div>';
                 html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
                 html += '<div class="card-date">📍 ' + item.data.location + '</div>';
                 
-                if (isAttended && item.data.participants) {
+                if (item.data.participants) {
                     html += '<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0, 217, 255, 0.1);">';
                     html += '<div style="font-weight: 600; color: #00d9ff; margin-bottom: 10px; font-size: 14px;">👥 出席者</div>';
                     
@@ -1450,8 +1437,7 @@ function loadTodayParticipatingEvents() {
             container.innerHTML = html;
         }
     });
-}
-        
+}    
         function loadUpcomingParticipatingEvents() {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -2257,6 +2243,11 @@ function markAttendance(eventId, userId) {
         });
     }).then(function() {
         closeModal('eventDetailModal');
+        
+        if (document.getElementById('mypageTab').classList.contains('hidden') === false) {
+            loadMyPage();
+        }
+        
         showEventDetail(eventId);
     }).catch(function(error) {
         alert('エラーが発生しました: ' + error.message);
