@@ -646,17 +646,29 @@
                 <button class="nav-tab" onclick="showTab('settings')"><i class="fas fa-cog"></i> 設定</button>
             </div>
             
-            <div id="homeTab">
-                <div id="todayEventsSection" class="section hidden">
-                    <h2 class="section-title">📅 本日の参加イベント</h2>
-                    <div id="todayEventsList"></div>
-                </div>
-                
-                <div class="section">
-                    <h2 class="section-title">🎉 イベント一覧</h2>
-                    <div id="allEventsList" class="cards-grid"></div>
-                </div>
+<div id="homeTab">
+    <div id="todayEventsSection" class="section hidden">
+        <h2 class="section-title">📅 本日の開催イベント</h2>
+        <div id="todayEventsList"></div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">🎉 開催予定のイベント</h2>
+        <div id="upcomingEventsList" class="cards-grid"></div>
+    </div>
+    
+    <div class="section">
+        <div class="collapsible">
+            <div class="collapsible-header" onclick="toggleCollapsible(event)">
+                <span style="font-weight: 700;">✅ 終了したイベント</span>
+                <i class="fas fa-chevron-down" style="color: #00d9ff;"></i>
             </div>
+            <div class="collapsible-content">
+                <div class="collapsible-body" id="endedEventsList"></div>
+            </div>
+        </div>
+    </div>
+</div>
             
             <div id="mypageTab" class="hidden">
             </div>
@@ -1121,76 +1133,113 @@
             loadAllEvents();
         }
         
-        function loadTodayEventsHome() {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+function loadTodayEventsHome() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    db.collection('events').get().then(function(snapshot) {
+        var todayEvents = [];
+        snapshot.forEach(function(doc) {
+            const event = doc.data();
+            if (!event.startDate) return;
             
-            db.collection('events').get().then(function(snapshot) {
-                var todayEvents = [];
-                snapshot.forEach(function(doc) {
-                    const event = doc.data();
-                    if (!event.startDate) return;
-                    
-                    const startDate = event.startDate.toDate();
-                    startDate.setHours(0, 0, 0, 0);
-                    const endDate = event.endDate ? event.endDate.toDate() : null;
-                    
-                    const isParticipant = event.participants && event.participants.some(function(p) { 
-                        return p.userId === currentUser.uid; 
-                    });
-                    
-                    if (isParticipant && startDate <= today) {
-                        if (!endDate) {
-                            if (startDate.getTime() === today.getTime()) {
-                                todayEvents.push({id: doc.id, data: event});
-                            }
-                        } else {
-                            const endDateNextDay = new Date(endDate);
-                            endDateNextDay.setDate(endDateNextDay.getDate() + 1);
-                            endDateNextDay.setHours(0, 0, 0, 0);
-                            if (today < endDateNextDay) {
-                                todayEvents.push({id: doc.id, data: event});
-                            }
-                        }
+            const startDate = event.startDate.toDate();
+            startDate.setHours(0, 0, 0, 0);
+            const endDate = event.endDate ? event.endDate.toDate() : null;
+            
+            if (startDate <= today) {
+                if (!endDate) {
+                    if (startDate.getTime() === today.getTime()) {
+                        todayEvents.push({id: doc.id, data: event});
                     }
-                });
-                
-                const section = document.getElementById('todayEventsSection');
-                const container = document.getElementById('todayEventsList');
-                
-                if (todayEvents.length === 0) {
-                    section.classList.add('hidden');
                 } else {
-                    section.classList.remove('hidden');
-                    let html = '<div class="cards-grid">';
-                    todayEvents.forEach(function(item) {
-                        html += renderEventCard(item.id, item.data, true);
-                    });
-                    html += '</div>';
-                    container.innerHTML = html;
+                    const endDateNextDay = new Date(endDate);
+                    endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+                    endDateNextDay.setHours(0, 0, 0, 0);
+                    if (today < endDateNextDay) {
+                        todayEvents.push({id: doc.id, data: event});
+                    }
                 }
+            }
+        });
+        
+        const section = document.getElementById('todayEventsSection');
+        const container = document.getElementById('todayEventsList');
+        
+        if (todayEvents.length === 0) {
+            section.classList.add('hidden');
+        } else {
+            section.classList.remove('hidden');
+            let html = '<div class="cards-grid">';
+            todayEvents.forEach(function(item) {
+                html += renderEventCard(item.id, item.data, true);
             });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    });
+}
+        
+function loadAllEvents() {
+    const upcomingContainer = document.getElementById('upcomingEventsList');
+    const endedContainer = document.getElementById('endedEventsList');
+    
+    upcomingContainer.innerHTML = '<div class="loading"><div class="spinner"></div><p>読み込み中...</p></div>';
+    
+    if (eventsListener) eventsListener();
+    eventsListener = db.collection('events').orderBy('startDate', 'asc').onSnapshot(function(snapshot) {
+        if (snapshot.empty) {
+            upcomingContainer.innerHTML = '<div class="empty-state"><p>イベントがまだありません</p></div>';
+            endedContainer.innerHTML = '<div class="empty-state"><p>終了したイベントはありません</p></div>';
+            return;
         }
         
-        function loadAllEvents() {
-            const container = document.getElementById('allEventsList');
-            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>読み込み中...</p></div>';
+        const now = new Date();
+        var upcomingEvents = [];
+        var endedEvents = [];
+        
+        snapshot.forEach(function(doc) {
+            const event = doc.data();
+            if (!event.startDate) return;
             
-            if (eventsListener) eventsListener();
-            eventsListener = db.collection('events').orderBy('startDate', 'asc').onSnapshot(function(snapshot) {
-                if (snapshot.empty) {
-                    container.innerHTML = '<div class="empty-state"><p>イベントがまだありません</p></div>';
-                    return;
-                }
-                let html = '';
-                snapshot.forEach(function(doc) {
-                    const event = doc.data();
-                    if (!event.startDate) return;
-                    html += renderEventCard(doc.id, event, false);
-                });
-                container.innerHTML = html;
+            const endDate = event.endDate ? event.endDate.toDate() : event.startDate.toDate();
+            
+            if (endDate < now) {
+                endedEvents.push({id: doc.id, data: event});
+            } else {
+                upcomingEvents.push({id: doc.id, data: event});
+            }
+        });
+        
+        if (upcomingEvents.length === 0) {
+            upcomingContainer.innerHTML = '<div class="empty-state"><p>開催予定のイベントはありません</p></div>';
+        } else {
+            let html = '';
+            upcomingEvents.forEach(function(item) {
+                html += renderEventCard(item.id, item.data, false);
             });
+            upcomingContainer.innerHTML = html;
         }
+        
+        if (endedEvents.length === 0) {
+            endedContainer.innerHTML = '<div class="empty-state"><p>終了したイベントはありません</p></div>';
+        } else {
+            endedEvents.sort(function(a, b) {
+                return b.data.startDate.toDate() - a.data.startDate.toDate();
+            });
+            
+            let html = '';
+            endedEvents.forEach(function(item) {
+                html += '<div class="card" onclick="showEventDetail(\'' + item.id + '\')" style="margin-bottom: 10px;">';
+                html += '<div class="card-title">' + item.data.title + '</div>';
+                html += '<div class="card-date">📅 ' + formatDate(item.data.startDate.toDate()) + '</div>';
+                html += '<div class="card-date">📍 ' + item.data.location + '</div>';
+                html += '</div>';
+            });
+            endedContainer.innerHTML = html;
+        }
+    });
+}
         
 function renderEventCard(eventId, event, isToday) {
     const eventDate = event.startDate.toDate();
