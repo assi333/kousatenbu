@@ -1920,6 +1920,11 @@ function showEventDetail(eventId) {
             
             document.getElementById('detailEventTitle').textContent = event.title;
             
+            if (canManage) {
+                const titleEl = document.getElementById('detailEventTitle');
+                titleEl.innerHTML = event.title + ' <i class="fas fa-edit" style="margin-left: 10px; cursor: pointer; color: #00d9ff;" onclick="event.stopPropagation(); showEditEventFromDetail(\'' + eventId + '\')"></i>';
+            }
+            
             let content = '<div class="collapsible" style="margin-bottom: 20px;">';
             content += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
             content += '<span style="font-weight: 700;">📋 イベント詳細</span>';
@@ -1973,10 +1978,14 @@ function showEventDetail(eventId) {
                         let participantHtml = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0, 217, 255, 0.1);">';
                         participantHtml += '<span>' + displayName + '</span>';
                         
-                        if (isAttended) {
+                        if (isToday) {
+                            if (isAttended) {
+                                participantHtml += '<button class="btn btn-secondary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席取消</button>';
+                            } else {
+                                participantHtml += '<button class="btn btn-primary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
+                            }
+                        } else if (isAttended) {
                             participantHtml += '<span class="badge badge-today">出席済</span>';
-                        } else if (isToday) {
-                            participantHtml += '<button class="btn btn-primary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
                         }
                         
                         participantHtml += '</div>';
@@ -2184,9 +2193,12 @@ function leaveEvent(eventId) {
 function markAttendance(eventId, userId) {
     db.collection('events').doc(eventId).get().then(function(doc) {
         const event = doc.data();
+        const participant = event.participants.find(function(p) { return p.userId === userId; });
+        const currentStatus = participant.attended || false;
+        
         const updatedParticipants = event.participants.map(function(p) {
             if (p.userId === userId) {
-                return Object.assign({}, p, { attended: true });
+                return Object.assign({}, p, { attended: !currentStatus });
             }
             return p;
         });
@@ -2195,7 +2207,6 @@ function markAttendance(eventId, userId) {
             participants: updatedParticipants
         });
     }).then(function() {
-        alert('出席を記録しました');
         closeModal('eventDetailModal');
         showEventDetail(eventId);
     }).catch(function(error) {
@@ -2203,6 +2214,10 @@ function markAttendance(eventId, userId) {
     });
 }
 
+function showEditEventFromDetail(eventId) {
+    closeModal('eventDetailModal');
+    showEditEvent(eventId);
+}
 function showMyQR() {
     const modal = document.getElementById('myQRModal');
     const container = document.getElementById('qrcodeContainer');
