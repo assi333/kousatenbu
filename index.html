@@ -802,7 +802,11 @@
                     <input type="number" id="editEventFee" placeholder="例: 3000" min="0">
                 </div>
             </div>
-            <button class="btn btn-primary" onclick="saveEditedEvent()">保存</button>
+<div class="btn-group">
+                <button class="btn btn-danger" onclick="confirmDeleteEvent()">削除</button>
+                <button class="btn btn-primary" onclick="saveEditedEvent()">保存</button>
+            </div>
+           
         </div>
     </div>
     
@@ -933,7 +937,20 @@
             <div id="qrcodeContainer" style="display: flex; justify-content: center; margin: 20px 0;"></div>
             <p style="color: #a0aec0; margin-top: 10px;">このQRコードを読み取ると、あなたのプロフィールが表示されます</p>
         </div>
-    </div>   
+    </div>
+     <div id="confirmDeleteModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-header">
+                <h2 class="modal-title">削除確認</h2>
+                <button class="close-btn" onclick="closeModal('confirmDeleteModal')">&times;</button>
+            </div>
+            <p style="margin: 20px 0; color: #cbd5e0;">このイベントを削除してもよろしいですか？</p>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal('confirmDeleteModal')">いいえ</button>
+                <button class="btn btn-danger" onclick="executeDeleteEvent()">はい、削除します</button>
+            </div>
+        </div>
+    </div>  
     <div id="contentModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1195,6 +1212,9 @@ function loadAllEvents() {
         }
         
         const now = new Date();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         var upcomingEvents = [];
         var endedEvents = [];
         
@@ -1202,11 +1222,19 @@ function loadAllEvents() {
             const event = doc.data();
             if (!event.startDate) return;
             
+            const startDate = event.startDate.toDate();
+            startDate.setHours(0, 0, 0, 0);
             const endDate = event.endDate ? event.endDate.toDate() : event.startDate.toDate();
+            
+            const endDateNextDay = new Date(endDate);
+            endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+            endDateNextDay.setHours(0, 0, 0, 0);
+            
+            const isToday = startDate <= today && today < endDateNextDay;
             
             if (endDate < now) {
                 endedEvents.push({id: doc.id, data: event});
-            } else {
+            } else if (!isToday) {
                 upcomingEvents.push({id: doc.id, data: event});
             }
         });
@@ -2257,6 +2285,28 @@ function markAttendance(eventId, userId) {
 function showEditEventFromDetail(eventId) {
     closeModal('eventDetailModal');
     showEditEvent(eventId);
+}
+function confirmDeleteEvent() {
+    document.getElementById('confirmDeleteModal').classList.add('active');
+}
+
+function executeDeleteEvent() {
+    if (!currentEditingEventId) return;
+    
+    db.collection('events').doc(currentEditingEventId).delete()
+        .then(function() {
+            closeModal('confirmDeleteModal');
+            closeModal('editEventModal');
+            alert('イベントを削除しました');
+            currentEditingEventId = null;
+            if (document.getElementById('mypageTab').classList.contains('hidden') === false) {
+                loadMyPage();
+            }
+            loadHomeData();
+        })
+        .catch(function(error) {
+            alert('エラーが発生しました: ' + error.message);
+        });
 }
 function showMyQR() {
     const modal = document.getElementById('myQRModal');
