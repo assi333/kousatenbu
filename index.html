@@ -1325,6 +1325,11 @@ auth.onAuthStateChanged(function(user) {
                 html += '<div class="collapsible-content">';
                 html += '<div class="collapsible-body" id="profileContent"></div>';
                 html += '</div></div></div>';
+
+html += '<div class="section">';
+html += '<h2 class="section-title">🤝 Cross Friends</h2>';
+html += '<div id="crossFriendsList"></div>';
+html += '</div>';
                 
                 html += '<div class="section">';
                 html += '<h2 class="section-title">📅 本日参加のイベント</h2>';
@@ -1354,6 +1359,7 @@ auth.onAuthStateChanged(function(user) {
                 document.getElementById('mypageTab').innerHTML = html;
                 
                 loadMyPageProfile();
+loadCrossFriends();
                 loadTodayParticipatingEvents();
                 loadUpcomingParticipatingEvents();
                 loadCreatedEvents();
@@ -2263,8 +2269,22 @@ function showUserProfile(userId) {
 
             content += '</div>';
         }
+if (userId !== currentUser.uid) {
+    db.collection('users').doc(currentUser.uid).get().then(function(myDoc) {
+        const myData = myDoc.data();
+        const crossFriends = myData.crossFriends || [];
+        const isAlreadyFriend = crossFriends.includes(userId);
+        
+        if (isAlreadyFriend) {
+            content += '<button class="btn btn-secondary" onclick="removeCrossFriend(\'' + userId + '\')" style="width: 100%; margin-top: 20px;">Cross Friendsから削除</button>';
+        } else {
+            content += '<button class="btn btn-primary" onclick="addCrossFriend(\'' + userId + '\')" style="width: 100%; margin-top: 20px;">🤝 Cross Friendsに追加</button>';
+        }
         
         document.getElementById('userProfileContent').innerHTML = content;
+    });
+} else {        
+       }
         document.getElementById('userProfileModal').classList.add('active');
     });
 }      
@@ -2356,7 +2376,87 @@ function showUserProfile(userId) {
             });
         }
 
+  function addCrossFriend(userId) {
+    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+        const crossFriends = doc.data().crossFriends || [];
+        if (!crossFriends.includes(userId)) {
+            crossFriends.push(userId);
+            return db.collection('users').doc(currentUser.uid).update({
+                crossFriends: crossFriends
+            });
+        }
+    }).then(function() {
+        alert('Cross Friendsに追加しました！');
+        closeModal('userProfileModal');
+        if (document.getElementById('mypageTab').classList.contains('hidden') === false) {
+            loadMyPage();
+        }
+    }).catch(function(error) {
+        alert('エラーが発生しました: ' + error.message);
+    });
+}
+
+function removeCrossFriend(userId) {
+    if (!confirm('Cross Friendsから削除しますか？')) return;
+    
+    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+        const crossFriends = doc.data().crossFriends || [];
+        const updatedFriends = crossFriends.filter(function(id) { return id !== userId; });
+        return db.collection('users').doc(currentUser.uid).update({
+            crossFriends: updatedFriends
+        });
+    }).then(function() {
+        alert('Cross Friendsから削除しました');
+        closeModal('userProfileModal');
+        if (document.getElementById('mypageTab').classList.contains('hidden') === false) {
+            loadMyPage();
+        }
+    }).catch(function(error) {
+        alert('エラーが発生しました: ' + error.message);
+    });
+}
+
+function loadCrossFriends() {
+    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+        const crossFriends = doc.data().crossFriends || [];
+        const container = document.getElementById('crossFriendsList');
         
+        if (crossFriends.length === 0) {
+            container.innerHTML = '<div style="color: #a0aec0; padding: 20px 0;">まだCross Friendsがいません</div>';
+            return;
+        }
+        
+        let html = '<div class="cards-grid">';
+        
+        crossFriends.forEach(function(friendId) {
+            db.collection('users').doc(friendId).get().then(function(friendDoc) {
+                if (!friendDoc.exists) return;
+                
+                const friendData = friendDoc.data();
+                const displayName = friendData.realName || friendData.nickname || friendData.displayName || 'ユーザー';
+                
+                const cardHtml = '<div class="card" onclick="showUserProfile(\'' + friendId + '\')">';
+                let cardContent = '<div style="display: flex; align-items: center; gap: 15px;">';
+                
+                if (friendData.photoURL) {
+                    cardContent += '<img src="' + friendData.photoURL + '" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">';
+                } else {
+                    cardContent += '<div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #00d9ff, #7000ff); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 24px;">' + displayName.charAt(0).toUpperCase() + '</div>';
+                }
+                
+                cardContent += '<div><div class="card-title">' + displayName + '</div>';
+                if (friendData.company) {
+                    cardContent += '<div style="color: #a0aec0; font-size: 13px; margin-top: 5px;">' + friendData.company + '</div>';
+                }
+                cardContent += '</div></div></div>';
+                
+                container.innerHTML += cardHtml + cardContent;
+            });
+        });
+        
+        container.innerHTML = html;
+    });
+}      
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
