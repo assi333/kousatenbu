@@ -1948,117 +1948,127 @@
             showEditEvent(eventId);
         }
         
-        function showEventDetail(eventId) {
-            db.collection('events').doc(eventId).get().then(function(doc) {
-                const event = doc.data();
-                if (!event.startDate) return;
-                
-                const eventDate = event.startDate.toDate();
-                const endDate = event.endDate ? event.endDate.toDate() : null;
-                const isCreator = event.creatorId === currentUser.uid;
-                const isParticipant = event.participants && event.participants.some(function(p) { 
-                    return p.userId === currentUser.uid; 
-                });
-                
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const startDate = new Date(eventDate);
-                startDate.setHours(0, 0, 0, 0);
-                const endDateCheck = endDate ? new Date(endDate) : new Date(eventDate);
-                const endDateNextDay = new Date(endDateCheck);
-                endDateNextDay.setDate(endDateNextDay.getDate() + 1);
-                endDateNextDay.setHours(0, 0, 0, 0);
-                const isToday = startDate <= today && today < endDateNextDay;
-                
-                db.collection('users').doc(currentUser.uid).get().then(function(userDoc) {
-                    const userData = userDoc.data();
-                    const canManage = userData && (userData.canCreateEvents || currentUser.email === ADMIN_EMAIL);
-                    
-                    document.getElementById('detailEventTitle').textContent = event.title;
-                    
-                    if (canManage) {
-                        const titleEl = document.getElementById('detailEventTitle');
-                        titleEl.innerHTML = event.title + ' <i class="fas fa-edit" style="margin-left: 10px; cursor: pointer; color: #00d9ff;" onclick="event.stopPropagation(); showEditEventFromDetail(\'' + eventId + '\')"></i>';
-                    }
-                    
-                    let content = '<div class="collapsible" style="margin-bottom: 20px;">';
-                    content += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
-                    content += '<span style="font-weight: 700;">📋 イベント詳細</span>';
-                    content += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
-                    content += '</div>';
-                    content += '<div class="collapsible-content">';
-                    content += '<div class="collapsible-body">';
-                    content += '<p style="color: #cbd5e0; margin-bottom: 15px;">' + event.description + '</p>';
-                    content += '<div style="display: grid; gap: 10px;">';
-                    content += '<p><strong>📅 開始:</strong> ' + formatDate(eventDate) + '</p>';
-                    if (endDate) content += '<p><strong>⏰ 終了:</strong> ' + formatDate(endDate) + '</p>';
-                    content += '<p><strong>📍 場所:</strong> ' + event.location + '</p>';
-                    
-                    if (canManage) {
-                        content += '<p><strong>👥 定員:</strong> ' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '名</p>';
-                    } else {
-                        content += '<p><strong>👥 定員:</strong> ' + event.capacity + '名</p>';
-                    }
-                    
-                    content += '<p><strong>💰 参加費:</strong> ' + (event.fee || 0) + '円</p>';
-                    
-                    if (event.organizer) {
-                        content += '<p><strong>👤 主催者:</strong> ' + event.organizer + '</p>';
-                    }
-                    if (event.creatorName) {
-                        content += '<p><strong>✏️ 作成者:</strong> ' + event.creatorName + '</p>';
-                    }
-                    
-                    content += '</div></div></div></div>';
-                    
-                    content += '<div class="btn-group">';
-                    if (!isParticipant) {
-                        content += '<button class="btn btn-primary" onclick="joinEvent(\'' + eventId + '\')">参加を予定する</button>';
-                    } else {
-                        content += '<button class="btn btn-danger" onclick="leaveEvent(\'' + eventId + '\')">参加予定をやめる</button>';
-                    }
-                    content += '</div>';
-                    
-                    if (canManage && event.participants && event.participants.length > 0) {
-                        content += '<div style="margin-top: 20px; padding: 20px; background: rgba(10, 14, 39, 0.4); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px;">';
-                        content += '<h3 style="color: #00d9ff; margin-bottom: 15px; font-size: 16px;">👥 参加予定者一覧</h3>';
-                        content += '<div id="participantsList"></div>';
-                        content += '</div>';
-                        
-                        document.getElementById('eventDetailContent').innerHTML = content;
-                        
-                        event.participants.forEach(function(p) {
-                            db.collection('users').doc(p.userId).get().then(function(participantDoc) {
-                                const participantData = participantDoc.data();
-                                const displayName = participantData ? (participantData.realName || participantData.nickname || p.userName) : p.userName;
-                                const isAttended = p.attended || false;
-                                
-                                let participantHtml = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0, 217, 255, 0.1);">';
-                                participantHtml += '<span>' + displayName + '</span>';
-                                
-                                if (isToday) {
-                                    if (isAttended) {
-                                        participantHtml += '<button class="btn btn-secondary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席取消</button>';
-                                    } else {
-                                        participantHtml += '<button class="btn btn-primary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
-                                    }
-                                } else if (isAttended) {
-                                    participantHtml += '<span class="badge badge-today">出席済</span>';
-                                }
-                                
-                                participantHtml += '</div>';
-                                document.getElementById('participantsList').insertAdjacentHTML('beforeend', participantHtml);
-                            });
-                        });
-                    } else {
-                        document.getElementById('eventDetailContent').innerHTML = content;
-                    }
-                    
-                    document.getElementById('eventDetailModal').classList.add('active');
-                });
-            });
-        }
+function showEventDetail(eventId) {
+    db.collection('events').doc(eventId).get().then(function(doc) {
+        const event = doc.data();
+        if (!event.startDate) return;
         
+        const eventDate = event.startDate.toDate();
+        const endDate = event.endDate ? event.endDate.toDate() : null;
+        const isCreator = event.creatorId === currentUser.uid;
+        const isParticipant = event.participants && event.participants.some(function(p) { 
+            return p.userId === currentUser.uid; 
+        });
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startDate = new Date(eventDate);
+        startDate.setHours(0, 0, 0, 0);
+        const endDateCheck = endDate ? new Date(endDate) : new Date(eventDate);
+        const endDateNextDay = new Date(endDateCheck);
+        endDateNextDay.setDate(endDateNextDay.getDate() + 1);
+        endDateNextDay.setHours(0, 0, 0, 0);
+        const isToday = startDate <= today && today < endDateNextDay;
+        
+        const myParticipant = event.participants && event.participants.find(function(p) {
+            return p.userId === currentUser.uid;
+        });
+        const iAmAttended = myParticipant && myParticipant.attended;
+        
+        db.collection('users').doc(currentUser.uid).get().then(function(userDoc) {
+            const userData = userDoc.data();
+            const canManage = userData && (userData.canCreateEvents || currentUser.email === ADMIN_EMAIL);
+            
+            document.getElementById('detailEventTitle').textContent = event.title;
+            
+            if (canManage) {
+                const titleEl = document.getElementById('detailEventTitle');
+                titleEl.innerHTML = event.title + ' <i class="fas fa-edit" style="margin-left: 10px; cursor: pointer; color: #00d9ff;" onclick="event.stopPropagation(); showEditEventFromDetail(\'' + eventId + '\')"></i>';
+            }
+            
+            let content = '<div class="collapsible" style="margin-bottom: 20px;">';
+            content += '<div class="collapsible-header" onclick="toggleCollapsible(event)">';
+            content += '<span style="font-weight: 700;">📋 イベント詳細</span>';
+            content += '<i class="fas fa-chevron-down" style="color: #00d9ff;"></i>';
+            content += '</div>';
+            content += '<div class="collapsible-content">';
+            content += '<div class="collapsible-body">';
+            content += '<p style="color: #cbd5e0; margin-bottom: 15px;">' + event.description + '</p>';
+            content += '<div style="display: grid; gap: 10px;">';
+            content += '<p><strong>📅 開始:</strong> ' + formatDate(eventDate) + '</p>';
+            if (endDate) content += '<p><strong>⏰ 終了:</strong> ' + formatDate(endDate) + '</p>';
+            content += '<p><strong>📍 場所:</strong> ' + event.location + '</p>';
+            
+            if (canManage) {
+                content += '<p><strong>👥 定員:</strong> ' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '名</p>';
+            } else {
+                content += '<p><strong>👥 定員:</strong> ' + event.capacity + '名</p>';
+            }
+            
+            content += '<p><strong>💰 参加費:</strong> ' + (event.fee || 0) + '円</p>';
+            
+            if (event.organizer) {
+                content += '<p><strong>👤 主催者:</strong> ' + event.organizer + '</p>';
+            }
+            if (event.creatorName) {
+                content += '<p><strong>✏️ 作成者:</strong> ' + event.creatorName + '</p>';
+            }
+            
+            content += '</div></div></div></div>';
+            
+            content += '<div class="btn-group">';
+            if (!isParticipant) {
+                content += '<button class="btn btn-primary" onclick="joinEvent(\'' + eventId + '\')">参加を予定する</button>';
+            } else {
+                content += '<button class="btn btn-danger" onclick="leaveEvent(\'' + eventId + '\')">参加予定をやめる</button>';
+            }
+            content += '</div>';
+            
+            if (canManage && event.participants && event.participants.length > 0) {
+                content += '<div style="margin-top: 20px; padding: 20px; background: rgba(10, 14, 39, 0.4); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px;">';
+                content += '<h3 style="color: #00d9ff; margin-bottom: 15px; font-size: 16px;">👥 参加予定者一覧</h3>';
+                content += '<div id="participantsList"></div>';
+                content += '</div>';
+                
+                document.getElementById('eventDetailContent').innerHTML = content;
+                
+                event.participants.forEach(function(p) {
+                    db.collection('users').doc(p.userId).get().then(function(participantDoc) {
+                        const participantData = participantDoc.data();
+                        const displayName = participantData ? (participantData.realName || participantData.nickname || p.userName) : p.userName;
+                        const isAttended = p.attended || false;
+                        const canViewProfile = iAmAttended && isAttended;
+                        
+                        let participantHtml = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0, 217, 255, 0.1);">';
+                        
+                        if (canViewProfile) {
+                            participantHtml += '<span style="color: #00d9ff; text-decoration: underline; cursor: pointer;" onclick="showUserProfile(\'' + p.userId + '\')">' + displayName + '</span>';
+                        } else {
+                            participantHtml += '<span>' + displayName + '</span>';
+                        }
+                        
+                        if (isToday) {
+                            if (isAttended) {
+                                participantHtml += '<button class="btn btn-secondary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席取消</button>';
+                            } else {
+                                participantHtml += '<button class="btn btn-primary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
+                            }
+                        } else if (isAttended) {
+                            participantHtml += '<span class="badge badge-today">出席済</span>';
+                        }
+                        
+                        participantHtml += '</div>';
+                        document.getElementById('participantsList').insertAdjacentHTML('beforeend', participantHtml);
+                    });
+                });
+            } else {
+                document.getElementById('eventDetailContent').innerHTML = content;
+            }
+            
+            document.getElementById('eventDetailModal').classList.add('active');
+        });
+    });
+}        
         function joinEvent(eventId) {
             const eventRef = db.collection('events').doc(eventId);
             eventRef.get().then(function(event) {
@@ -2153,7 +2163,51 @@
             
             modal.classList.add('active');
         }
+
+ function showUserProfile(userId) {
+    db.collection('users').doc(userId).get().then(function(doc) {
+        if (!doc.exists) return;
+        const userData = doc.data();
+        const displayName = getUserDisplayName(userData);
         
+        let content = '<div class="profile-header"><div class="profile-avatar">';
+        if (userData.photoURL) {
+            content += '<img src="' + userData.photoURL + '" alt="avatar">';
+        } else {
+            content += displayName.charAt(0).toUpperCase();
+        }
+        content += '</div><div><h2>' + displayName + '</h2></div></div>';
+        
+        if (userData.realName) content += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
+        if (userData.nickname) content += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
+        if (userData.publicEmail) content += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
+        if (userData.phone) content += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
+        if (userData.lineId) content += '<div class="profile-field"><div class="profile-field-label">LINE</div><div class="profile-field-value">' + userData.lineId + '</div></div>';
+        if (userData.company) content += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
+        if (userData.bio) content += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
+        
+        if (userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin || userData.lineId) {
+            content += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
+            if (userData.lineId) content += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
+            if (userData.instagram) content += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
+            if (userData.threads) content += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
+            if (userData.facebook) content += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
+            if (userData.twitter) content += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
+            if (userData.linkedin) content += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
+            content += '</div></div>';
+        }
+        
+        if (userData.businessCardFront || userData.businessCardBack) {
+            content += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
+            if (userData.businessCardFront) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
+            if (userData.businessCardBack) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
+            content += '</div></div>';
+        }
+        
+        document.getElementById('userProfileContent').innerHTML = content;
+        document.getElementById('userProfileModal').classList.add('active');
+    });
+}       
         function showCardImage(imageUrl) {
             document.getElementById('cardImageView').src = imageUrl;
             document.getElementById('cardImageModal').classList.add('active');
