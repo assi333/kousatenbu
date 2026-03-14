@@ -1001,17 +1001,26 @@
             if (googleBtn2) googleBtn2.addEventListener('click', googleLogin);
         });
         
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                currentUser = user;
-                initializeUserProfile();
-                showMainApp();
-                loadHomeData();
-            } else {
-                currentUser = null;
-                showAuthScreen();
-            }
-        });
+auth.onAuthStateChanged(function(user) {
+    if (user) {
+        currentUser = user;
+        initializeUserProfile();
+        showMainApp();
+        loadHomeData();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const profileId = urlParams.get('profile');
+        if (profileId) {
+            setTimeout(function() {
+                showUserProfile(profileId);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 1000);
+        }
+    } else {
+        currentUser = null;
+        showAuthScreen();
+    }
+});
         
         function initializeUserProfile() {
             const userRef = db.collection('users').doc(currentUser.uid);
