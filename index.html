@@ -901,6 +901,14 @@
                 <label>自己紹介・特技</label>
                 <textarea id="profileBio" rows="4" placeholder="自己紹介や特技を入力してください"></textarea>
             </div>
+<div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="profilePrivateMode" style="width: auto; cursor: pointer;">
+                    <span>詳細情報をQR交換済みユーザーのみに公開する</span>
+                </label>
+                <small style="color: #a0aec0; font-size: 12px;">チェックすると、アイコンと名前のみが表示され、その他の情報はQRコードを交換したユーザーのみに公開されます</small>
+            </div>
+
             <div class="btn-group">
                 <button class="btn btn-secondary" onclick="closeModal('editProfileModal')">キャンセル</button>
                 <button class="btn btn-primary" id="saveProfileBtn" onclick="updateProfile()">保存</button>
@@ -1613,6 +1621,8 @@ auth.onAuthStateChanged(function(user) {
                 document.getElementById('profileLinkedin').value = userData.linkedin || '';
                 document.getElementById('profileCompany').value = userData.company || '';
                 document.getElementById('profileBio').value = userData.bio || '';
+
+document.getElementById('profilePrivateMode').checked = userData.privateMode || false;
                 
                 profilePhotoURL = null;
                 cardFrontURL = null;
@@ -1774,6 +1784,8 @@ auth.onAuthStateChanged(function(user) {
                     businessCardFront: newCardFront || '',
                     businessCardBack: newCardBack || '',
                     bio: document.getElementById('profileBio').value
+,
+                    privateMode: document.getElementById('profilePrivateMode').checked
                 };
                 
                 return currentUser.updateProfile({ displayName: displayName }).then(function() {
@@ -2195,11 +2207,17 @@ participantHtml += '</div>';
             modal.classList.add('active');
         }
 
- function showUserProfile(userId) {
+function showUserProfile(userId) {
     db.collection('users').doc(userId).get().then(function(doc) {
         if (!doc.exists) return;
         const userData = doc.data();
         const displayName = getUserDisplayName(userData);
+        const isPrivate = userData.privateMode || false;
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const isFromQR = urlParams.get('profile') === userId;
+        
+        const canViewDetails = !isPrivate || isFromQR;
         
         let content = '<div class="profile-header"><div class="profile-avatar">';
         if (userData.photoURL) {
@@ -2209,36 +2227,44 @@ participantHtml += '</div>';
         }
         content += '</div><div><h2>' + displayName + '</h2></div></div>';
         
-        if (userData.realName) content += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
-        if (userData.nickname) content += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
-        if (userData.publicEmail) content += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
-        if (userData.phone) content += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
-        if (userData.lineId) content += '<div class="profile-field"><div class="profile-field-label">LINE</div><div class="profile-field-value">' + userData.lineId + '</div></div>';
-        if (userData.company) content += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
-        if (userData.bio) content += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
-        
-        if (userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin || userData.lineId) {
-            content += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
-            if (userData.lineId) content += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
-            if (userData.instagram) content += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
-            if (userData.threads) content += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
-            if (userData.facebook) content += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
-            if (userData.twitter) content += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
-            if (userData.linkedin) content += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
-            content += '</div></div>';
-        }
-        
-        if (userData.businessCardFront || userData.businessCardBack) {
-            content += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
-            if (userData.businessCardFront) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
-            if (userData.businessCardBack) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
-            content += '</div></div>';
+        if (canViewDetails) {
+            if (userData.realName) content += '<div class="profile-field"><div class="profile-field-label">氏名</div><div class="profile-field-value">' + userData.realName + '</div></div>';
+            if (userData.nickname) content += '<div class="profile-field"><div class="profile-field-label">ニックネーム</div><div class="profile-field-value">' + userData.nickname + '</div></div>';
+            if (userData.publicEmail) content += '<div class="profile-field"><div class="profile-field-label">メール</div><div class="profile-field-value">' + userData.publicEmail + '</div></div>';
+            if (userData.phone) content += '<div class="profile-field"><div class="profile-field-label">電話</div><div class="profile-field-value">' + userData.phone + '</div></div>';
+            if (userData.lineId) content += '<div class="profile-field"><div class="profile-field-label">LINE</div><div class="profile-field-value">' + userData.lineId + '</div></div>';
+            if (userData.company) content += '<div class="profile-field"><div class="profile-field-label">会社・団体</div><div class="profile-field-value">' + userData.company + '</div></div>';
+            if (userData.bio) content += '<div class="profile-field"><div class="profile-field-label">自己紹介</div><div class="profile-field-value">' + userData.bio + '</div></div>';
+            
+            if (userData.instagram || userData.threads || userData.facebook || userData.twitter || userData.linkedin || userData.lineId) {
+                content += '<div class="profile-field"><div class="profile-field-label">SNS</div><div class="social-icons">';
+                if (userData.lineId) content += '<a href="https://line.me/ti/p/~' + userData.lineId + '" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>';
+                if (userData.instagram) content += '<a href="https://instagram.com/' + userData.instagram.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>';
+                if (userData.threads) content += '<a href="https://threads.net/' + userData.threads.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-threads"></i></a>';
+                if (userData.facebook) content += '<a href="' + (userData.facebook.startsWith('http') ? userData.facebook : 'https://facebook.com/' + userData.facebook) + '" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>';
+                if (userData.twitter) content += '<a href="https://twitter.com/' + userData.twitter.replace('@', '') + '" target="_blank" class="social-icon"><i class="fab fa-x-twitter"></i></a>';
+                if (userData.linkedin) content += '<a href="' + (userData.linkedin.startsWith('http') ? userData.linkedin : 'https://linkedin.com/in/' + userData.linkedin) + '" target="_blank" class="social-icon"><i class="fab fa-linkedin"></i></a>';
+                content += '</div></div>';
+            }
+            
+            if (userData.businessCardFront || userData.businessCardBack) {
+                content += '<div class="profile-field"><div class="profile-field-label">名刺</div><div class="profile-field-value">';
+                if (userData.businessCardFront) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardFront + '\')">名刺（表）</span>';
+                if (userData.businessCardBack) content += '<span class="business-card-link" onclick="showCardImage(\'' + userData.businessCardBack + '\')">名刺（裏）</span>';
+                content += '</div></div>';
+            }
+        } else {
+            content += '<div style="text-align: center; padding: 40px 20px; color: #a0aec0;">';
+            content += '<i class="fas fa-lock" style="font-size: 48px; margin-bottom: 15px; color: #00d9ff;"></i>';
+            content += '<p style="font-size: 16px; font-weight: 600; margin-bottom: 10px;">詳細はQR交換で公開</p>';
+            content += '<p style="font-size: 14px;">このユーザーは詳細情報をQRコード交換済みのユーザーのみに公開しています</p>';
+            content += '</div>';
         }
         
         document.getElementById('userProfileContent').innerHTML = content;
         document.getElementById('userProfileModal').classList.add('active');
     });
-}       
+}      
         function showCardImage(imageUrl) {
             document.getElementById('cardImageView').src = imageUrl;
             document.getElementById('cardImageModal').classList.add('active');
