@@ -2024,7 +2024,7 @@ function showEventDetail(eventId) {
             }
             content += '</div>';
             
-            if (canManage && event.participants && event.participants.length > 0) {
+            if ((canManage || iAmAttended) && event.participants && event.participants.length > 0) {
                 content += '<div style="margin-top: 20px; padding: 20px; background: rgba(10, 14, 39, 0.4); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px;">';
                 content += '<h3 style="color: #00d9ff; margin-bottom: 15px; font-size: 16px;">👥 参加予定者一覧</h3>';
                 content += '<div id="participantsList"></div>';
