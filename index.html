@@ -1981,7 +1981,11 @@ function showEventDetail(eventId) {
             if (endDate) content += '<p><strong>⏰ 終了:</strong> ' + formatDate(endDate) + '</p>';
             content += '<p><strong>📍 場所:</strong> ' + event.location + '</p>';
             
-content += '<p><strong>👥 定員:</strong> ' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '名</p>';
+if (canManage) {
+    content += '<p><strong>👥 定員:</strong> ' + (event.participants ? event.participants.length : 0) + '/' + event.capacity + '名</p>';
+} else {
+    content += '<p><strong>👥 定員:</strong> ' + event.capacity + '名</p>';
+}';
             
             content += '<p><strong>💰 参加費:</strong> ' + (event.fee || 0) + '円</p>';
             
