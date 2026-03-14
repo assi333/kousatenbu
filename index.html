@@ -2028,39 +2028,51 @@ function showEventDetail(eventId) {
                 content += '<div style="margin-top: 20px; padding: 20px; background: rgba(10, 14, 39, 0.4); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px;">';
                 content += '<h3 style="color: #00d9ff; margin-bottom: 15px; font-size: 16px;">👥 参加予定者一覧</h3>';
                 content += '<div id="participantsList"></div>';
-                content += '</div>';
                 
-                document.getElementById('eventDetailContent').innerHTML = content;
-                
-                event.participants.forEach(function(p) {
-                    db.collection('users').doc(p.userId).get().then(function(participantDoc) {
-                        const participantData = participantDoc.data();
-                        const displayName = participantData ? (participantData.realName || participantData.nickname || p.userName) : p.userName;
-                        const isAttended = p.attended || false;
-                        const canViewProfile = iAmAttended && isAttended;
+document.getElementById('eventDetailContent').innerHTML = content;
+
+event.participants.forEach(function(p) {
+    const isAttended = p.attended || false;
+    
+    if (!canManage && !isAttended) {
+        return;
+    }
+    
+    db.collection('users').doc(p.userId).get().then(function(participantDoc) {
+        const participantData = participantDoc.data();
+        const displayName = participantData ? (participantData.realName || participantData.nickname || p.userName) : p.userName;
+        const canViewProfile = iAmAttended && isAttended;
+        
+        let participantHtml = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0, 217, 255, 0.1);">';
+        
+        if (canViewProfile) {
+            participantHtml += '<span style="color: #00d9ff; text-decoration: underline; cursor: pointer;" onclick="showUserProfile(\'' + p.userId + '\')">' + displayName + '</span>';
+        } else {
+            participantHtml += '<span>' + displayName + '</span>';
+        }
+        
+        if (canManage) {
+            if (isToday) {
+                if (isAttended) {
+                    participantHtml += '<button class="btn btn-secondary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席取消</button>';
+                } else {
+                    participantHtml += '<button class="btn btn-primary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
+                }
+            } else if (isAttended) {
+                participantHtml += '<span class="badge badge-today">出席済</span>';
+            }
+        } else {
+            if (isAttended) {
+                participantHtml += '<span class="badge badge-today">出席済</span>';
+            }
+        }
+        
+        participantHtml += '</div>';
+        document.getElementById('participantsList').insertAdjacentHTML('beforeend', participantHtml);
+    });
+});
                         
-                        let participantHtml = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0, 217, 255, 0.1);">';
-                        
-                        if (canViewProfile) {
-                            participantHtml += '<span style="color: #00d9ff; text-decoration: underline; cursor: pointer;" onclick="showUserProfile(\'' + p.userId + '\')">' + displayName + '</span>';
-                        } else {
-                            participantHtml += '<span>' + displayName + '</span>';
-                        }
-                        
-                        if (isToday) {
-                            if (isAttended) {
-                                participantHtml += '<button class="btn btn-secondary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席取消</button>';
-                            } else {
-                                participantHtml += '<button class="btn btn-primary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
-                            }
-                        } else if (isAttended) {
-                            participantHtml += '<span class="badge badge-today">出席済</span>';
-                        }
-                        
-                        participantHtml += '</div>';
-                        document.getElementById('participantsList').insertAdjacentHTML('beforeend', participantHtml);
-                    });
-                });
+
             } else {
                 document.getElementById('eventDetailContent').innerHTML = content;
             }
