@@ -2043,13 +2043,23 @@ event.participants.forEach(function(p) {
         const displayName = participantData ? (participantData.realName || participantData.nickname || p.userName) : p.userName;
         const canViewProfile = iAmAttended && isAttended;
         
-        let participantHtml = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0, 217, 255, 0.1);">';
-        
-        if (canViewProfile) {
-            participantHtml += '<span style="color: #00d9ff; text-decoration: underline; cursor: pointer;" onclick="showUserProfile(\'' + p.userId + '\')">' + displayName + '</span>';
-        } else {
-            participantHtml += '<span>' + displayName + '</span>';
-        }
+let participantHtml = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0, 217, 255, 0.1);">';
+
+participantHtml += '<div style="display: flex; align-items: center; gap: 10px;">';
+
+const avatarHtml = participantData && participantData.photoURL 
+    ? '<img src="' + participantData.photoURL + '" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">'
+    : '<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #00d9ff, #7000ff); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">' + displayName.charAt(0).toUpperCase() + '</div>';
+
+participantHtml += avatarHtml;
+
+if (canViewProfile) {
+    participantHtml += '<span style="color: #00d9ff; text-decoration: underline; cursor: pointer;" onclick="showUserProfile(\'' + p.userId + '\')">' + displayName + '</span>';
+} else {
+    participantHtml += '<span>' + displayName + '</span>';
+}
+
+participantHtml += '</div>';
         
         if (canManage) {
             if (isToday) {
