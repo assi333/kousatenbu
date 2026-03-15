@@ -48,7 +48,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 8px 32px rgba(219, 0, 147, 0.1);
+            box-shadow: 0 8px 60px rgba(219, 0, 147, 0.1);
         }
         
         .logo {
@@ -581,10 +581,11 @@
 }
 
 .participant-avatar {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     flex-shrink: 0;
+    object-fit: cover;
 }
 
 .btn-attended {
@@ -2098,7 +2099,7 @@ participantHtml += '<div class="participant-info">';
 
 const avatarHtml = participantData && participantData.photoURL 
     ? '<img src="' + participantData.photoURL + '" class="participant-avatar">'
-    : '<div class="participant-avatar" style="background: linear-gradient(135deg, #DB0093, #ff4db8); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: white;">' + displayName.charAt(0).toUpperCase() + '</div>';
+    : '<div class="participant-avatar" style="background: linear-gradient(135deg, #DB0093, #ff4db8); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 24px; color: white;">' + displayName.charAt(0).toUpperCase() + '</div>';
 
 participantHtml += avatarHtml;
 
