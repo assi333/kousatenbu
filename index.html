@@ -565,6 +565,46 @@
         }
         
         .card-image-modal {
+.participant-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8f8f8;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.participant-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.participant-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.btn-attended {
+    background: #DB0093;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-not-attended {
+    background: transparent;
+    color: #666666;
+    padding: 8px 16px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
             max-width: 90%;
             max-height: 80vh;
             border-radius: 12px;
@@ -2050,43 +2090,45 @@ event.participants.forEach(function(p) {
         const participantData = participantDoc.data();
         const displayName = participantData ? (participantData.realName || participantData.nickname || p.userName) : p.userName;
         const canViewProfile = iAmAttended && isAttended;
-        
-let participantHtml = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(0, 217, 255, 0.1);">';
 
-participantHtml += '<div style="display: flex; align-items: center; gap: 10px;">';
+
+let participantHtml = '<div class="participant-row">';
+
+participantHtml += '<div class="participant-info">';
 
 const avatarHtml = participantData && participantData.photoURL 
-    ? '<img src="' + participantData.photoURL + '" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">'
-    : '<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #00d9ff, #7000ff); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">' + displayName.charAt(0).toUpperCase() + '</div>';
+    ? '<img src="' + participantData.photoURL + '" class="participant-avatar">'
+    : '<div class="participant-avatar" style="background: linear-gradient(135deg, #DB0093, #ff4db8); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: white;">' + displayName.charAt(0).toUpperCase() + '</div>';
 
 participantHtml += avatarHtml;
 
 if (canViewProfile) {
-    participantHtml += '<span style="color: #00d9ff; text-decoration: underline; cursor: pointer;" onclick="showUserProfile(\'' + p.userId + '\')">' + displayName + '</span>';
+    participantHtml += '<span style="color: #DB0093; text-decoration: underline; cursor: pointer; font-weight: 600;" onclick="showUserProfile(\'' + p.userId + '\')">' + displayName + '</span>';
 } else {
-    participantHtml += '<span>' + displayName + '</span>';
+    participantHtml += '<span style="font-weight: 600;">' + displayName + '</span>';
 }
 
 participantHtml += '</div>';
-        
-        if (canManage) {
-            if (isToday) {
-                if (isAttended) {
-                    participantHtml += '<button class="btn btn-secondary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席取消</button>';
-                } else {
-                    participantHtml += '<button class="btn btn-primary btn-small" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
-                }
-            } else if (isAttended) {
-                participantHtml += '<span class="badge badge-today">出席済</span>';
-            }
+
+if (canManage) {
+    if (isToday) {
+        if (isAttended) {
+            participantHtml += '<button class="btn-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
         } else {
-            if (isAttended) {
-                participantHtml += '<span class="badge badge-today">出席済</span>';
-            }
+            participantHtml += '<button class="btn-not-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">未出席</button>';
         }
-        
-        participantHtml += '</div>';
-        document.getElementById('participantsList').insertAdjacentHTML('beforeend', participantHtml);
+    } else if (isAttended) {
+        participantHtml += '<span class="badge badge-today">出席済</span>';
+    }
+} else {
+    if (isAttended) {
+        participantHtml += '<span class="badge badge-today">出席済</span>';
+    }
+}
+
+participantHtml += '</div>';
+document.getElementById('participantsList').insertAdjacentHTML('beforeend', participantHtml);        
+
     });
 });
                         
