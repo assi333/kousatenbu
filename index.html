@@ -511,124 +511,6 @@
         }
         
         @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-    
-    header {
-        padding: 15px;
-        flex-direction: column;
-        gap: 15px;
-        align-items: stretch;
-    }
-    
-    .logo {
-        font-size: 24px;
-        text-align: center;
-    }
-    
-    .user-info {
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-    
-    .nav-tabs {
-        flex-direction: row;
-        overflow-x: auto;
-    }
-    
-    .nav-tab {
-        flex-shrink: 0;
-        font-size: 13px;
-        padding: 10px 8px;
-    }
-    
-    .section {
-        padding: 15px;
-    }
-    
-    .section-title {
-        font-size: 18px;
-    }
-    
-    .cards-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    .card {
-        padding: 15px;
-    }
-    
-    .card-title {
-        font-size: 16px;
-    }
-    
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-    
-    .modal-content {
-        padding: 20px;
-        max-width: 95%;
-    }
-    
-    .modal-title {
-        font-size: 20px;
-    }
-    
-    .btn-group {
-        flex-direction: column;
-    }
-    
-    .btn-group .btn {
-        width: 100%;
-    }
-    
-    .profile-header {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .profile-avatar {
-        width: 80px;
-        height: 80px;
-        font-size: 32px;
-    }
-    
-    .auth-container {
-        margin: 20px auto;
-        padding: 30px 20px;
-    }
-    
-    .auth-title {
-        font-size: 28px;
-    }
-    
-    .participant-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .participant-info {
-        width: 100%;
-    }
-    
-.btn-attended,
-    .btn-not-attended {
-        width: auto;
-        min-width: 50px;
-        text-align: center;
-    }
-    
-    .participant-row {
-        flex-direction: row;
-        align-items: center;
-        gap: 15px;
-    }
-}
         
         .empty-state { text-align: center; padding: 40px 20px; color: #666666; }
         
@@ -721,6 +603,115 @@
             cursor: pointer;
             font-weight: 600;
         }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header {
+                padding: 15px;
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            
+            .logo {
+                font-size: 24px;
+                text-align: center;
+            }
+            
+            .user-info {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .nav-tabs {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+            
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 13px;
+                padding: 10px 8px;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .section-title {
+                font-size: 18px;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .card-title {
+                font-size: 16px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                padding: 20px;
+                max-width: 95%;
+            }
+            
+            .modal-title {
+                font-size: 20px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+            }
+            
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
+            
+            .auth-container {
+                margin: 20px auto;
+                padding: 30px 20px;
+            }
+            
+            .auth-title {
+                font-size: 28px;
+            }
+            
+            .btn-attended,
+            .btn-not-attended {
+                width: auto;
+                min-width: 50px;
+                text-align: center;
+            }
+            
+            .participant-row {
+                flex-direction: row;
+                align-items: center;
+                gap: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -771,7 +762,6 @@
                     <span id="userName"></span>
                     <div class="avatar" id="userAvatar"></div>
                     <button class="btn btn-secondary btn-small" onclick="showMyQR()">マイQR</button>
-
                 </div>
             </header>
             
@@ -1456,9 +1446,9 @@
                 html += '<div class="collapsible-body" id="profileContent"></div>';
                 html += '</div></div></div>';
 
-html += '<div style="margin: 20px 0; text-align: center;">';
-html += '<button class="btn btn-secondary" onclick="logout()" style="max-width: 300px;">ログアウト</button>';
-html += '</div>';
+                html += '<div style="margin: 20px 0; text-align: center;">';
+                html += '<button class="btn btn-secondary" onclick="logout()" style="max-width: 300px;">ログアウト</button>';
+                html += '</div>';
                 
                 html += '<div class="section">';
                 html += '<h2 class="section-title">🤝 Cross Friends</h2>';
@@ -1583,7 +1573,13 @@ html += '</div>';
                         if (friendData.company) {
                             cardHtml += '<div style="color: #666666; font-size: 13px; margin-top: 5px;">' + friendData.company + '</div>';
                         }
-                       html += '</div></div></div>';
+                        cardHtml += '</div></div></div>';
+                        
+                        grid.insertAdjacentHTML('beforeend', cardHtml);
+                    });
+                });
+            });
+        }
         
         function loadTodayParticipatingEvents() {
             const today = new Date();
@@ -2257,18 +2253,17 @@ html += '</div>';
                                 
                                 participantHtml += '</div>';
                                 
-                               
-if (canManage) {
-    if (isToday) {
-        if (isAttended) {
-            participantHtml += '<button class="btn-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出</button>';
-        } else {
-            participantHtml += '<button class="btn-not-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">未</button>';
-        }
-    } else if (isAttended) {
-        participantHtml += '<span class="badge badge-today">出</span>';
-    }
-}
+                                if (canManage) {
+                                    if (isToday) {
+                                        if (isAttended) {
+                                            participantHtml += '<button class="btn-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出</button>';
+                                        } else {
+                                            participantHtml += '<button class="btn-not-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">未</button>';
+                                        }
+                                    } else if (isAttended) {
+                                        participantHtml += '<span class="badge badge-today">出</span>';
+                                    }
+                                }
                                 
                                 participantHtml += '</div>';
                                 document.getElementById('participantsList').insertAdjacentHTML('beforeend', participantHtml);
