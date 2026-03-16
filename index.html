@@ -764,7 +764,7 @@
                     <span id="userName"></span>
                     <div class="avatar" id="userAvatar"></div>
                     <button class="btn btn-secondary btn-small" onclick="showMyQR()">マイQR</button>
-                    <button class="btn btn-secondary btn-small" onclick="logout()">ログアウト</button>
+
                 </div>
             </header>
             
@@ -1481,7 +1481,11 @@
                 
                 document.getElementById('mypageTab').innerHTML = html;
                 
-                loadMyPageProfile();
+html += '<div style="margin-bottom: 20px; text-align: right;">';
+html += '<button class="btn btn-secondary btn-small" onclick="logout()">ログアウト</button>';
+html += '</div>';                
+
+loadMyPageProfile();
                 loadCrossFriends();
                 loadTodayParticipatingEvents();
                 loadUpcomingParticipatingEvents();
@@ -2217,7 +2221,7 @@
                     
                     if ((canManage || iAmAttended) && event.participants && event.participants.length > 0) {
                         content += '<div style="margin-top: 20px; padding: 20px; background: rgba(219, 0, 147, 0.05); border: 1px solid rgba(219, 0, 147, 0.2); border-radius: 12px;">';
-                        content += '<h3 style="color: #DB0093; margin-bottom: 15px; font-size: 16px;">👥 参加予定者一覧</h3>';
+                        content += '<h3 style="color: #DB0093; margin-bottom: 15px; font-size: 16px;">👥 参加者一覧</h3>';
                         content += '<div id="participantsList"></div>';
                         content += '</div>';
                         
@@ -2252,21 +2256,18 @@
                                 
                                 participantHtml += '</div>';
                                 
-                                if (canManage) {
-                                    if (isToday) {
-                                        if (isAttended) {
-                                            participantHtml += '<button class="btn-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出席</button>';
-                                        } else {
-                                            participantHtml += '<button class="btn-not-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">未出席</button>';
-                                        }
-                                    } else if (isAttended) {
-                                        participantHtml += '<span class="badge badge-today">出席済</span>';
-                                    }
-                                } else {
-                                    if (isAttended) {
-                                        participantHtml += '<span class="badge badge-today">出席済</span>';
-                                    }
-                                }
+                               
+if (canManage) {
+    if (isToday) {
+        if (isAttended) {
+            participantHtml += '<button class="btn-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">出</button>';
+        } else {
+            participantHtml += '<button class="btn-not-attended" onclick="markAttendance(\'' + eventId + '\', \'' + p.userId + '\')">未</button>';
+        }
+    } else if (isAttended) {
+        participantHtml += '<span class="badge badge-today">出</span>';
+    }
+}
                                 
                                 participantHtml += '</div>';
                                 document.getElementById('participantsList').insertAdjacentHTML('beforeend', participantHtml);
