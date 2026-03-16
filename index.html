@@ -511,6 +511,117 @@
         }
         
         @keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    header {
+        padding: 15px;
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .logo {
+        font-size: 24px;
+        text-align: center;
+    }
+    
+    .user-info {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .nav-tabs {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+    
+    .nav-tab {
+        flex-shrink: 0;
+        font-size: 13px;
+        padding: 10px 8px;
+    }
+    
+    .section {
+        padding: 15px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+    }
+    
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .card {
+        padding: 15px;
+    }
+    
+    .card-title {
+        font-size: 16px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        padding: 20px;
+        max-width: 95%;
+    }
+    
+    .modal-title {
+        font-size: 20px;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 32px;
+    }
+    
+    .auth-container {
+        margin: 20px auto;
+        padding: 30px 20px;
+    }
+    
+    .auth-title {
+        font-size: 28px;
+    }
+    
+    .participant-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .participant-info {
+        width: 100%;
+    }
+    
+    .btn-attended,
+    .btn-not-attended {
+        width: 100%;
+        text-align: center;
+    }
+}
         
         .empty-state { text-align: center; padding: 40px 20px; color: #666666; }
         
