@@ -626,9 +626,12 @@ header {
                 top: 120px;
             }
             
-            .container {
+.container {
                 padding: 10px;
-                padding-top: 200px;
+            }
+            
+            #homeTab, #mypageTab, #settingsTab {
+                padding-top: 160px;
             }
             
             header {
@@ -793,7 +796,11 @@ header {
 <button class="nav-tab" onclick="scrollToActivity()"><i class="fas fa-comments"></i> 活動</button>
                 <button class="nav-tab" onclick="showTab('settings')"><i class="fas fa-cog"></i> 設定</button>
             </div>
-.container { max-width: 1200px; margin: 0 auto; padding: 20px; padding-top: 180px; position: relative; }           
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; }
+        
+        #homeTab, #mypageTab, #settingsTab {
+            padding-top: 80px;
+        }           
             <div id="homeTab">
                 <div id="todayEventsSection" class="section hidden">
                     <h2 class="section-title">📅 本日の開催イベント</h2>
