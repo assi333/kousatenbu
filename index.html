@@ -1460,9 +1460,10 @@ if (canCreate) {
                     html += '<button class="btn btn-primary" onclick="showCreateEventModal()" style="flex: 1;">✨ イベント作成</button>';
                     html += '<button class="btn btn-primary" onclick="showCreateActivityModal()" style="flex: 1;">💬 活動作成</button>';
 
-<div style="margin-bottom: 20px;">
- html += '<button class="btn btn-primary" onclick="showCreateActivityModal()" style="flex: 1;">💬 活動作成</button>';                  
- html += '</div>';
+html += '<div style="margin-bottom: 20px; display: flex; gap: 10px;">';
+html += '<button class="btn btn-primary" onclick="showCreateEventModal()" style="flex: 1;">✨ イベント作成</button>';
+html += '<button class="btn btn-primary" onclick="showCreateActivityModal()" style="flex: 1;">💬 活動作成</button>';                  
+html += '</div>';
                 }
                 
                 html += '<div class="section">';
