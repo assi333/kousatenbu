@@ -38,6 +38,11 @@
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; }
         
         header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(219, 0, 147, 0.2);
@@ -187,11 +192,19 @@
         
         .nav-tabs {
             display: flex;
+            top: 90px;
+            left: 0;
+            right: 0;
+            z-index: 99;
+            display: flex;
             gap: 10px;
             margin-bottom: 30px;
             background: rgba(255, 255, 255, 0.8);
             padding: 8px;
             border-radius: 16px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .nav-tab {
@@ -768,9 +781,10 @@
             <div class="nav-tabs">
                 <button class="nav-tab active" onclick="showTab('home')"><i class="fas fa-home"></i> ホーム</button>
                 <button class="nav-tab" onclick="showTab('mypage')"><i class="fas fa-user"></i> マイページ</button>
+<button class="nav-tab" onclick="scrollToActivity()"><i class="fas fa-comments"></i> 活動</button>
                 <button class="nav-tab" onclick="showTab('settings')"><i class="fas fa-cog"></i> 設定</button>
             </div>
-            
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; padding-top: 180px; position: relative; }           
             <div id="homeTab">
                 <div id="todayEventsSection" class="section hidden">
                     <h2 class="section-title">📅 本日の開催イベント</h2>
@@ -794,7 +808,10 @@
                     </div>
                 </div>
             </div>
-            
+  <div id="everyoneActivitySection" class="section">
+                    <h2 class="section-title">💬 みんなの活動</h2>
+                    <div style="color: #666666; padding: 20px 0;">準備中...</div>
+                </div>          
             <div id="mypageTab" class="hidden">
             </div>
             
@@ -1266,7 +1283,17 @@
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
         }
-        
+function scrollToActivity() {
+            document.querySelectorAll('.nav-tab').forEach(function(btn) { btn.classList.remove('active'); });
+            document.getElementById('homeTab').classList.remove('hidden');
+            document.getElementById('mypageTab').classList.add('hidden');
+            document.getElementById('settingsTab').classList.add('hidden');
+            
+            const activitySection = document.getElementById('everyoneActivitySection');
+            if (activitySection) {
+                activitySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }        
         function showTab(tab) {
             document.querySelectorAll('.nav-tab').forEach(function(btn) { btn.classList.remove('active'); });
             event.target.closest('.nav-tab').classList.add('active');
@@ -1487,6 +1514,10 @@
                 loadTodayParticipatingEvents();
                 loadUpcomingParticipatingEvents();
                 loadCreatedEvents();
+html += '<div class="section">';
+                html += '<h2 class="section-title">💬 私の活動</h2>';
+                html += '<div id="myActivityContent" style="color: #666666; padding: 20px 0;">準備中...</div>';
+                html += '</div>';
                 loadPastParticipatingEvents();
             });
         }
