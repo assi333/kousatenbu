@@ -615,15 +615,19 @@
             font-weight: 600;
         }
 
-        @media (max-width: 768px) {
-
-header {
-                padding: 10px 15px;
-                margin-bottom: 10px;
+@media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                padding-top: 220px;
             }
             
-.nav-tabs {
-                top: 120px;
+            header {
+                padding: 12px 15px;
+            }
+            
+            .nav-tabs {
+                top: 140px;
+            }
             }
             
 .container {
@@ -796,7 +800,7 @@ header {
 <button class="nav-tab" onclick="scrollToActivity()"><i class="fas fa-comments"></i> 活動</button>
                 <button class="nav-tab" onclick="showTab('settings')"><i class="fas fa-cog"></i> 設定</button>
             </div>
-.container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; padding-top: 200px; position: relative; }
         
         #homeTab, #mypageTab, #settingsTab {
             padding-top: 80px;
